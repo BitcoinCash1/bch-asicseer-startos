@@ -1,0 +1,92 @@
+name: Release Service
+
+on:
+  push:
+    branches: ['master']
+    paths-ignore: ['*.md']
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Publish as pre-release?'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup build environment
+        uses: start9labs/shared-workflows/.github/actions/setup-build-env@master
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Find or create developer signing key
+        run: |
+          if [ -n "${{ secrets.DEV_KEY }}" ]; then
+            mkdir -p ~/.startos
+            printf '%s' "${{ secrets.DEV_KEY }}" > ~/.startos/developer.key.pem
+          else
+            start-cli init-key
+          fi
+        shell: bash
+
+      - name: Build service packages
+        run: |
+          RUST_LOG=debug RUST_BACKTRACE=1 make
+          echo ""
+          echo "SHA256SUMs:"
+          sha256sum *.s9pk
+        shell: bash
+
+      - name: Generate changelog
+        run: |
+          FIRST_S9PK=$(ls *.s9pk | head -1)
+          RELEASE_NOTES=$(start-cli s9pk inspect "$FIRST_S9PK" manifest \
+            | jq -r '.releaseNotes // "No release notes provided."')
+          {
+            echo "## What's Changed"
+            echo ""
+            echo "${RELEASE_NOTES}"
+            echo ""
+            echo "## SHA256 Hashes"
+            echo '```'
+            sha256sum *.s9pk
+            echo '```'
+          } > change-log.txt
+        shell: bash
+
+      - name: Set release metadata
+        id: meta
+        run: |
+          if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
+            echo "tag=pre-release" >> $GITHUB_OUTPUT
+            echo "name=ASICSeer — Pre-release" >> $GITHUB_OUTPUT
+            echo "is_pre=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "name=ASICSeer — Latest Stable" >> $GITHUB_OUTPUT
+            echo "is_pre=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Move release tag to current commit
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git tag -fa "${{ steps.meta.outputs.tag }}" -m "Release ${{ steps.meta.outputs.name }}"
+          git push -f origin "${{ steps.meta.outputs.tag }}"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.meta.outputs.name }}
+          tag_name: ${{ steps.meta.outputs.tag }}
+          body_path: change-log.txt
+          prerelease: ${{ steps.meta.outputs.is_pre }}
+          files: '*.s9pk'

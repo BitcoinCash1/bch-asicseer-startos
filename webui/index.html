@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASICSeer — BCH Mining Pool</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🔍</div>
+        <div>
+          <h1>ASICSeer</h1>
+          <p class="subtitle">Bitcoin Cash Mining Pool</p>
+        </div>
+      </div>
+      <div class="status-badge" id="status-badge">Connecting...</div>
+    </header>
+
+    <div class="cards">
+      <!-- Pool Mode Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Pool Mining</h2>
+          <span class="badge pool">Shared Rewards</span>
+        </div>
+        <div class="card-body">
+          <div class="stat-row">
+            <span class="label">Port</span>
+            <span class="value" id="pool-port">3334</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Hashrate</span>
+            <span class="value" id="pool-hashrate">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Workers</span>
+            <span class="value" id="pool-workers">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Blocks Found</span>
+            <span class="value" id="pool-blocks">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Best Share</span>
+            <span class="value" id="pool-bestshare">—</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <code>stratum+tcp://&lt;host&gt;:3334</code>
+        </div>
+      </div>
+
+      <!-- Solo Mode Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Solo Mining</h2>
+          <span class="badge solo">Winner Takes All</span>
+        </div>
+        <div class="card-body">
+          <div class="stat-row">
+            <span class="label">Port</span>
+            <span class="value" id="solo-port">4568</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Hashrate</span>
+            <span class="value" id="solo-hashrate">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Workers</span>
+            <span class="value" id="solo-workers">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Blocks Found</span>
+            <span class="value" id="solo-blocks">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">Best Share</span>
+            <span class="value" id="solo-bestshare">—</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <code>stratum+tcp://&lt;host&gt;:4568</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection Guide -->
+    <div class="card wide">
+      <div class="card-header">
+        <h2>Getting Started</h2>
+      </div>
+      <div class="card-body guide">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>Choose your mode</strong>
+            <p>Pool mode (port 3334) shares block rewards among all miners. Solo mode (port 4568) gives the entire block reward to the miner who finds it.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>Configure your miner</strong>
+            <p>Point your ASIC at <code>stratum+tcp://&lt;host&gt;:&lt;port&gt;</code>. Use your BCH address as the username. Any password works (or use <code>d=DIFFICULTY</code> to set custom difficulty).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>Mix and match</strong>
+            <p>You can point different miners to different modes. For example, your Antminer to pool mode and your Bitaxe to solo mode. No reconfiguration needed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>ASICSeer for StartOS — <a href="https://github.com/BitcoinCash1/bch-asicseer-startos">GitHub</a></p>
+    </footer>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>
