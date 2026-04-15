@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/license-GPL--3.0-orange" alt="License">
 </p>
 
-**ASICSeer** is a Bitcoin Cash mining pool for [StartOS](https://start9.com), built on the [ASICSeer fork](https://github.com/plebeminux/asicseer-pool) of ckpool. It provides **dual-mode** operation — pool mining and solo mining — with a built-in web dashboard.
+**ASICSeer** is a Bitcoin Cash mining pool for [StartOS](https://start9.com), powered by [ASICSeer Pool](https://github.com/cculianu/asicseer-pool) — fast, C-based, multithreaded mining pool software for Bitcoin Cash. It provides **dual-mode** operation — pool mining and solo mining — with a built-in web dashboard.
 
 ## Features
 
@@ -119,16 +119,16 @@ Both packages are ckpool forks with the same dual-mode architecture. They use **
 | Pool Port | 3333 | 3334 |
 | Solo Port | 4567 | 4568 |
 | Web UI Port | 80 | 81 |
-| Upstream | [skaisser/ckpool](https://github.com/skaisser/ckpool) | [plebeminux/asicseer-pool](https://github.com/plebeminux/asicseer-pool) |
+| Upstream | [skaisser/ckpool](https://github.com/skaisser/ckpool) | [cculianu/asicseer-pool](https://github.com/cculianu/asicseer-pool) |
 
 ## Upstream
 
-- [plebeminux/asicseer-pool](https://github.com/plebeminux/asicseer-pool) — ASICSeer fork of ckpool
+- [cculianu/asicseer-pool](https://github.com/cculianu/asicseer-pool) — Fast, C-based, multithreaded mining pool software for Bitcoin Cash
 - [bitcoin-cash-node](https://github.com/bitcoin-cash-node/bitcoin-cash-node) — Bitcoin Cash full node
 
 ## License
 
-GPL-3.0 — matches upstream ckpool license.
+GPL-3.0 — matches upstream ASICSeer Pool license.
 
 ---
 
@@ -139,7 +139,7 @@ GPL-3.0 — matches upstream ckpool license.
 package: bch-asicseer
 type: startos-service
 sdk: "@start9labs/start-sdk@1.0.0"
-upstream: plebeminux/asicseer-pool
+upstream: cculianu/asicseer-pool
 depends_on: bitcoin-cash-node (BCHN or BCHD)
 ports:
   pool: 3334 (stratum)
