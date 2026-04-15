@@ -42,14 +42,12 @@ header {
 }
 
 .logo-icon {
-  font-size: 2rem;
   width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-dim);
-  border-radius: var(--radius);
+  flex-shrink: 0;
 }
 
 h1 {

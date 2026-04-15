@@ -75,7 +75,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
   })
 
   // ── Write ckpool config files ────────────────────────────────────
-  const poolConf = JSON.stringify(
+  // asicseer-pool requires pool_fee to be a JSON float (e.g. 1.0 not 1)
+  const ensureFloat = (s: string) =>
+    s.replace(/"pool_fee":\s*(\d+)(?!\.)/g, '"pool_fee": $1.0')
+
+  const poolConf = ensureFloat(JSON.stringify(
     {
       btcd: [
         {
@@ -99,9 +103,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
     },
     null,
     2,
-  )
+  ))
 
-  const soloConf = JSON.stringify(
+  const soloConf = ensureFloat(JSON.stringify(
     {
       btcd: [
         {
@@ -126,7 +130,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     },
     null,
     2,
-  )
+  ))
 
   await poolSub.exec([
     'sh',
