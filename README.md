@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon.svg" alt="ASICSeer Logo" width="21%">
+</p>
+
 # ASICSeer for StartOS
 
 <p align="center">
