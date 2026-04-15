@@ -79,6 +79,6 @@ export const configure = sdk.Action.withInput(
       poolIdentifier: input.poolIdentifier,
       poolDifficulty: input.poolDifficulty,
     })
-    return 'Pool configuration saved. Restart ASICSeer to apply changes.'
+    return null
   },
 )

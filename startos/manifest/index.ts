@@ -26,7 +26,7 @@ export const manifest = setupManifest({
   },
   alerts: {
     install:
-      'ASICSeer requires a running Bitcoin Cash Node (BCHN or BCHD). Make sure your node is fully synced before starting the pool.',
+      'ASICSeer requires a running Bitcoin Cash full node (BCHN, Knuth, or BCHD). Make sure your node is fully synced before starting the pool. Configure which node to use in the ASICSeer settings.',
     update: null,
     uninstall:
       'Uninstalling ASICSeer will permanently delete pool configuration and statistics. Mining hardware will need to be reconfigured.',
@@ -38,13 +38,19 @@ export const manifest = setupManifest({
   dependencies: {
     'bitcoin-cash-node': {
       description:
-        'Bitcoin Cash Node (BCHN or Knuth flavor) provides the blockchain data, RPC interface, and block notifications required for mining.',
-      optional: false,
+        'Bitcoin Cash Node (BCHN) — reference BCH full node with JSON-RPC, ZMQ, and compact block filters.',
+      optional: true,
+      s9pk: null,
+    },
+    'knuth-bch': {
+      description:
+        'Knuth — high-performance C++ BCH full node with Bitcoin Core-compatible RPC, ZMQ, and IPC.',
+      optional: true,
       s9pk: null,
     },
     'bitcoin-cash-daemon': {
       description:
-        'Bitcoin Cash Daemon (BCHD) is an alternative Go-based full node. Can be used alongside BCHN for redundancy or alternative RPC access.',
+        'Bitcoin Cash Daemon (BCHD) — Go-based BCH full node with gRPC API and compact block filters.',
       optional: true,
       s9pk: null,
     },

@@ -6,8 +6,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "1.0.0",
-    "bitcoin-cash-node-startos": "git+https://github.com/BitcoinCash1/bitcoin-cash-node-startos.git#master"
+    "@start9labs/start-sdk": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

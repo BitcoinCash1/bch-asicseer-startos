@@ -1,32 +1,35 @@
-import { autoconfig } from 'bitcoin-cash-node-startos/startos/actions/config/autoconfig'
 import { sdk } from './sdk'
+import { storeJson } from './file-models/store.json'
 
 export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
-  await sdk.action.createTask(
-    effects,
-    'bitcoin-cash-node',
-    autoconfig,
-    'critical',
-    {
-      input: {
-        kind: 'partial',
-        value: {
-          prune: null,
-          txindex: true,
-          zmqEnabled: true,
-        },
-      },
-      reason:
-        'Pruning must be disabled, txindex and ZMQ must be enabled for ASICSeer to function properly.',
-      when: { condition: 'input-not-matches', once: false },
-    },
-  )
+  const store = await storeJson.read().once()
+  const nodeBackend = store?.nodeBackend ?? 'bitcoin-cash-node'
 
-  return {
-    'bitcoin-cash-node': {
-      kind: 'running' as const,
-      versionRange: '>=0.1.0:0',
-      healthChecks: ['primary'],
-    },
+  const deps: Record<string, any> = {}
+
+  switch (nodeBackend) {
+    case 'bitcoin-cash-node':
+      deps['bitcoin-cash-node'] = {
+        kind: 'running' as const,
+        versionRange: '>=0.1.0:0',
+        healthChecks: ['primary'],
+      }
+      break
+    case 'knuth-bch':
+      deps['knuth-bch'] = {
+        kind: 'running' as const,
+        versionRange: '>=0.1.0:0',
+        healthChecks: ['primary'],
+      }
+      break
+    case 'bitcoin-cash-daemon':
+      deps['bitcoin-cash-daemon'] = {
+        kind: 'running' as const,
+        versionRange: '>=0.1.0:0',
+        healthChecks: ['primary'],
+      }
+      break
   }
+
+  return deps
 })
