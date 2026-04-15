@@ -73,6 +73,101 @@
 | **Username** | Your BCH address |
 | **Password** | Anything (or `d=DIFFICULTY` for custom difficulty) |
 
+## Running StartOS in a Virtual Machine
+
+If you run StartOS inside a **libvirt/KVM virtual machine** (e.g. via `virt-manager`), miners on your local network cannot reach the VM directly because libvirt uses a NAT bridge (`virbr0`). You need to forward the mining ports from your host machine to the VM.
+
+This works with **any connection type** — wired (Ethernet), wireless (WiFi), or both simultaneously.
+
+### One-Command Setup (Linux)
+
+Download and run the setup script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BitcoinCash1/bch-asicseer-startos/master/scripts/setup-vm-forwarding.sh -o setup-vm-forwarding.sh
+chmod +x setup-vm-forwarding.sh
+sudo ./setup-vm-forwarding.sh
+```
+
+That's it. The script will:
+
+1. Auto-detect your StartOS VM and its IP address
+2. Pin the VM's IP so it doesn't change on reboot (static DHCP lease)
+3. Install a [libvirt qemu hook](https://wiki.libvirt.org/Networking.html#forwarding-incoming-connections) that automatically forwards ports whenever the VM starts
+4. Detect **all** your physical network interfaces (wired + wireless) and forward on each
+5. Print the exact stratum URLs to use for your miners
+
+```
+$ sudo ./setup-vm-forwarding.sh
+[OK] Found VM: Start9OS
+[OK] VM IP: 192.168.122.129
+[OK]   eno1 (192.168.0.55)          ← wired
+[OK]   wlp4s0 (192.168.0.156)      ← wireless
+[OK] Hook installed at /etc/libvirt/hooks/qemu
+[OK] Forwarding rules active
+
+  Miner configuration — use ANY of these addresses:
+
+    via eno1 (192.168.0.55):
+      ASICSeer:       stratum+tcp://192.168.0.55:3334
+      ASICSeer Solo:  stratum+tcp://192.168.0.55:4568
+
+    via wlp4s0 (192.168.0.156):
+      ASICSeer:       stratum+tcp://192.168.0.156:3334
+      ASICSeer Solo:  stratum+tcp://192.168.0.156:4568
+```
+
+### Management Commands
+
+```bash
+# Check current status
+sudo ./setup-vm-forwarding.sh --status
+
+# Completely remove (restores system to default)
+sudo ./setup-vm-forwarding.sh --remove
+
+# Specify VM name manually (if auto-detect fails)
+sudo ./setup-vm-forwarding.sh "My StartOS VM"
+```
+
+### How It Works
+
+The script installs `/etc/libvirt/hooks/qemu` — the [official libvirt hook mechanism](https://wiki.libvirt.org/Networking.html#forwarding-incoming-connections). When the VM starts, the hook adds `iptables` DNAT rules that forward incoming connections on ports 3334, 4568, and 81 from every physical network interface to the VM. When the VM stops, the rules are automatically removed.
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│   Miner     │────▶│  Host Machine    │────▶│  StartOS VM      │
+│ 192.168.0.x │     │  eno1/wlp4s0     │     │  192.168.122.x   │
+│             │     │  (iptables DNAT) │     │  (virbr0 NAT)    │
+└─────────────┘     └──────────────────┘     └──────────────────┘
+  stratum+tcp://       port forwarding          asicseer listening
+  192.168.0.55:3334    3334 → VM:3334           on :3334
+```
+
+No bridges, no NetworkManager changes, no DNS changes. Just iptables rules managed by the official libvirt hook system.
+
+### Windows / macOS (VirtualBox, VMware, etc.)
+
+If you run StartOS in **VirtualBox** or **VMware**:
+
+1. **Bridged Networking (recommended):** Change the VM's network adapter to "Bridged" mode. The VM will get its own IP on your LAN and miners can connect directly — no port forwarding needed.
+
+2. **NAT with Port Forwarding:** If you must use NAT mode:
+   - **VirtualBox:** `VBoxManage modifyvm "StartOS" --natpf1 "pool,tcp,,3334,,3334" --natpf1 "solo,tcp,,4568,,4568" --natpf1 "web,tcp,,81,,81"`
+   - **VMware:** Edit the NAT configuration in `vmnetcfg.exe` (Windows) or `/Library/Preferences/VMware Fusion/vmnet8/nat.conf` (macOS) to add port forwards for 3334, 4568, and 81.
+
+For **Hyper-V** on Windows, use an External virtual switch (equivalent to bridged mode).
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Script says "VM not found" | Run `virsh list --all` to see VM names, then pass it: `sudo ./setup-vm-forwarding.sh "exact name"` |
+| Script says "Cannot determine VM IP" | Start the VM first, wait 30 seconds for it to get an IP, then run again |
+| Miner connects but pool shows no hashrate | Check that the pool service is running on StartOS (Actions → Start) |
+| Port forwarding stops after reboot | The hook should auto-apply when the VM starts. Run `sudo ./setup-vm-forwarding.sh --status` to verify the hook file exists |
+| Want to undo everything | `sudo ./setup-vm-forwarding.sh --remove` restores your system completely |
+
 ## Building from Source
 
 ```bash
