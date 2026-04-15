@@ -195,14 +195,29 @@
       return hrB - hrA
     })
 
+    // Auto-number workers without a .name suffix
+    var autoCount = {}
+    for (var a = 0; a < allWorkers.length; a++) {
+      var wn = allWorkers[a].worker || allWorkers[a].user || ''
+      var di = wn.indexOf('.')
+      if (di <= 0 || di === wn.length - 1) {
+        var addr = di > 0 ? wn.substring(0, di) : wn
+        autoCount[addr] = (autoCount[addr] || 0) + 1
+        allWorkers[a]._autoName = 'worker' + String(autoCount[addr]).padStart(2, '0')
+      }
+    }
+
     var html = ''
     for (var k = 0; k < allWorkers.length; k++) {
       var w = allWorkers[k]
       var name = w.worker || w.user || '—'
-      // Strip the address prefix if worker name contains "." separator
-      var shortName = name
+      var shortName
       var dotIdx = name.indexOf('.')
-      if (dotIdx > 0) shortName = name.substring(dotIdx + 1)
+      if (dotIdx > 0 && dotIdx < name.length - 1) {
+        shortName = name.substring(dotIdx + 1)
+      } else {
+        shortName = w._autoName || 'worker'
+      }
 
       var hr5m = formatHashrate(dspsToHashrate(w.dsps5))
       var hr60 = formatHashrate(dspsToHashrate(w.dsps60))

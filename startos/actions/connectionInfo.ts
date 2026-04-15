@@ -20,6 +20,16 @@ export const connectionInfo = sdk.Action.withoutInput(
       .getOwn(effects, soloInterfaceId)
       .once()
 
+    type Member = {
+      name: string
+      description: string | null
+      type: 'single'
+      value: string
+      copyable: boolean
+      qr: boolean
+      masked: boolean
+    }
+
     const getAddresses = (
       iface: typeof poolIface,
       fallbackPort: number,
@@ -35,34 +45,28 @@ export const connectionInfo = sdk.Action.withoutInput(
     const poolAddrs = getAddresses(poolIface, poolPort)
     const soloAddrs = getAddresses(soloIface, soloPort)
 
-    const members: Array<{
-      name: string
-      description: string | null
-      type: 'single'
-      value: string
-      copyable: boolean
-      qr: boolean
-      masked: boolean
-    }> = []
+    const members: Member[] = []
 
-    if (poolAddrs.length > 0) {
+    // Show all available pool addresses
+    for (let i = 0; i < poolAddrs.length; i++) {
       members.push({
-        name: 'Pool Stratum URL',
-        description: 'Shared reward mining — connect your miners here',
+        name: i === 0 ? 'Pool Stratum URL' : `Pool Stratum URL (${i + 1})`,
+        description: i === 0 ? 'Shared reward mining — connect your miners here' : null,
         type: 'single' as const,
-        value: poolAddrs[0],
+        value: poolAddrs[i],
         copyable: true,
         qr: false,
         masked: false,
       })
     }
 
-    if (soloAddrs.length > 0) {
+    // Show all available solo addresses
+    for (let i = 0; i < soloAddrs.length; i++) {
       members.push({
-        name: 'Solo Stratum URL',
-        description: 'Winner-takes-all mining — you keep the entire block reward',
+        name: i === 0 ? 'Solo Stratum URL' : `Solo Stratum URL (${i + 1})`,
+        description: i === 0 ? 'Winner-takes-all mining — you keep the entire block reward' : null,
         type: 'single' as const,
-        value: soloAddrs[0],
+        value: soloAddrs[i],
         copyable: true,
         qr: false,
         masked: false,
@@ -71,9 +75,11 @@ export const connectionInfo = sdk.Action.withoutInput(
 
     members.push({
       name: 'Username',
-      description: 'Use your own BCH address as the stratum username — this is where mining rewards go',
+      description:
+        'Your BCH address, optionally with a worker name: address.workername — ' +
+        'e.g. bitcoincash:qr...abc.rig1 — miners without a .name suffix get auto-assigned worker01, worker02, etc.',
       type: 'single' as const,
-      value: '<your BCH address>',
+      value: '<your BCH address>.<worker name>',
       copyable: false,
       qr: false,
       masked: false,
