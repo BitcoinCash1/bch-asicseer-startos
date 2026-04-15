@@ -1,7 +1,6 @@
 import { sdk } from './sdk'
-import { poolPort, soloPort, uiPort, rootDir, bchnMountpoint } from './utils'
+import { poolPort, soloPort, uiPort, rootDir, nodeHostnames, nodeMountpoints, NodeBackend } from './utils'
 import { storeJson } from './file-models/store.json'
-import { manifest as bchnManifest } from 'bitcoin-cash-node-startos/startos/manifest'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.log('Starting ASICSeer!')
@@ -11,6 +10,10 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const poolFee = store?.poolFee ?? 1
   const poolIdentifier = store?.poolIdentifier ?? 'ASICSeer'
   const poolDifficulty = store?.poolDifficulty ?? 64
+  const nodeBackend = (store?.nodeBackend ?? 'bitcoin-cash-node') as NodeBackend
+
+  const nodeHost = nodeHostnames[nodeBackend]
+  const nodeMountpoint = nodeMountpoints[nodeBackend]
 
   // ── Mounts ───────────────────────────────────────────────────────
   const mounts = sdk.Mounts.of()
@@ -20,13 +23,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
       mountpoint: rootDir,
       readonly: false,
     })
-    .mountDependency<typeof bchnManifest>({
-      dependencyId: 'bitcoin-cash-node',
+    .mountDependency({
+      dependencyId: nodeBackend,
       volumeId: 'main',
       subpath: null,
-      mountpoint: bchnMountpoint,
+      mountpoint: nodeMountpoint,
       readonly: true,
-    })
+    } as any)
 
   // ── SubContainers ────────────────────────────────────────────────
   const poolSub = await sdk.SubContainer.of(
@@ -50,42 +53,39 @@ export const main = sdk.setupMain(async ({ effects }) => {
     'ui-sub',
   )
 
-  // ── Read BCHN RPC credentials from mounted dependency ────────────
-  let rpcUser = 'bitcoin-cash-node'
+  // ── Read node RPC credentials from mounted dependency ────────────
+  let rpcUser = nodeBackend
   let rpcPassword = ''
   try {
     const result = await poolSub.exec([
       'cat',
-      `${bchnMountpoint}/store.json`,
+      `${nodeMountpoint}/store.json`,
     ])
     if (result.exitCode === 0) {
-      const bchnStore = JSON.parse(result.stdout.toString()) as {
+      const nodeStore = JSON.parse(result.stdout.toString()) as {
         rpcUser?: string
         rpcPassword?: string
       }
-      rpcUser = bchnStore.rpcUser ?? rpcUser
-      rpcPassword = bchnStore.rpcPassword ?? rpcPassword
+      rpcUser = nodeStore.rpcUser ?? rpcUser
+      rpcPassword = nodeStore.rpcPassword ?? rpcPassword
     }
   } catch {
-    console.warn('Could not read BCHN store.json — using defaults')
+    console.warn(`Could not read ${nodeBackend} store.json — using defaults`)
   }
 
-  // Persist BCHN creds
   await storeJson.merge(effects, {
-    bchnRpcUser: rpcUser,
-    bchnRpcPassword: rpcPassword,
+    nodeRpcUser: rpcUser,
+    nodeRpcPassword: rpcPassword,
   })
 
   // ── Write ckpool config files ────────────────────────────────────
-  const bchnHost = 'bitcoin-cash-node.startos'
-
   const poolConf = JSON.stringify(
     {
       btcd: [
         {
-          url: `${bchnHost}:8332`,
+          url: `${nodeHost}:8332`,
           auth: `${rpcUser}:${rpcPassword}`,
-          notify: `${bchnHost}:8330`,
+          notify: `${nodeHost}:8330`,
         },
       ],
       btcaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
@@ -108,9 +108,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
     {
       btcd: [
         {
-          url: `${bchnHost}:8332`,
+          url: `${nodeHost}:8332`,
           auth: `${rpcUser}:${rpcPassword}`,
-          notify: `${bchnHost}:8330`,
+          notify: `${nodeHost}:8330`,
         },
       ],
       btcaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
@@ -130,7 +130,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
     2,
   )
 
-  // Write configs via subcontainer
   await poolSub.exec([
     'sh',
     '-c',

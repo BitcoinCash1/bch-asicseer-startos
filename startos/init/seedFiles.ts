@@ -9,8 +9,9 @@ export const seedFiles = sdk.setupOnInit(async (effects) => {
       poolFee: 1,
       poolIdentifier: 'ASICSeer',
       poolDifficulty: 64,
-      bchnRpcUser: '',
-      bchnRpcPassword: '',
+      nodeBackend: 'bitcoin-cash-node',
+      nodeRpcUser: '',
+      nodeRpcPassword: '',
     })
   }
 })
