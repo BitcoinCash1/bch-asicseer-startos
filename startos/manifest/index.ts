@@ -21,6 +21,7 @@ export const manifest = setupManifest({
     asicseer: {
       source: { dockerBuild: {} },
       arch: ['x86_64', 'aarch64'],
+      emulateMissingAs: 'x86_64',
     },
   },
   alerts: {

@@ -1,19 +1,16 @@
-name: Release Service
+name: Tag and Release
 
 on:
   push:
     branches: ['master']
     paths-ignore: ['*.md']
-  workflow_dispatch:
-    inputs:
-      prerelease:
-        description: 'Publish as pre-release?'
-        required: false
-        default: 'false'
-        type: boolean
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -46,10 +43,11 @@ jobs:
         shell: bash
 
       - name: Generate changelog
+        id: changelog
         run: |
           FIRST_S9PK=$(ls *.s9pk | head -1)
-          RELEASE_NOTES=$(start-cli s9pk inspect "$FIRST_S9PK" manifest \
-            | jq -r '.releaseNotes // "No release notes provided."')
+          TITLE=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.title')
+          RELEASE_NOTES=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.releaseNotes // "No release notes provided."')
           {
             echo "## What's Changed"
             echo ""
@@ -60,33 +58,21 @@ jobs:
             sha256sum *.s9pk
             echo '```'
           } > change-log.txt
+          echo "release_name=${TITLE} - Latest Stable" >> "$GITHUB_OUTPUT"
         shell: bash
-
-      - name: Set release metadata
-        id: meta
-        run: |
-          if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
-            echo "tag=pre-release" >> $GITHUB_OUTPUT
-            echo "name=ASICSeer — Pre-release" >> $GITHUB_OUTPUT
-            echo "is_pre=true" >> $GITHUB_OUTPUT
-          else
-            echo "tag=latest" >> $GITHUB_OUTPUT
-            echo "name=ASICSeer — Latest Stable" >> $GITHUB_OUTPUT
-            echo "is_pre=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Move release tag to current commit
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
-          git tag -fa "${{ steps.meta.outputs.tag }}" -m "Release ${{ steps.meta.outputs.name }}"
-          git push -f origin "${{ steps.meta.outputs.tag }}"
+          git tag -f latest
+          git push origin -f latest
 
-      - name: Publish GitHub release
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.meta.outputs.name }}
-          tag_name: ${{ steps.meta.outputs.tag }}
+          tag_name: latest
+          name: ${{ steps.changelog.outputs.release_name }}
+          prerelease: false
           body_path: change-log.txt
-          prerelease: ${{ steps.meta.outputs.is_pre }}
-          files: '*.s9pk'
+          files: ./*.s9pk
