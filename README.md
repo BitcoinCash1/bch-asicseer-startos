@@ -144,7 +144,7 @@ The script installs `/etc/libvirt/hooks/qemu` — the [official libvirt hook mec
   192.168.0.55:3334    3334 → VM:3334           on :3334
 ```
 
-No bridges, no NetworkManager changes, no DNS changes. Just iptables rules managed by the official libvirt hook system.
+No bridges, NetworkManager changes, or DNS changes. Just iptables rules managed by the official libvirt hook system.
 
 ### Windows / macOS (VirtualBox, VMware, etc.)
 
