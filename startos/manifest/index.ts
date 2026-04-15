@@ -6,7 +6,7 @@ export const manifest = setupManifest({
   license: 'GPL-3.0',
   packageRepo: 'https://github.com/BitcoinCash1/bch-asicseer-startos',
   upstreamRepo: 'https://github.com/plebeminux/asicseer-pool',
-  marketingUrl: null,
+  marketingUrl: 'https://github.com/plebeminux/asicseer-pool',
   donationUrl: null,
   docsUrls: [
     'https://github.com/BitcoinCash1/bch-asicseer-startos/blob/master/README.md',
@@ -38,8 +38,15 @@ export const manifest = setupManifest({
   dependencies: {
     'bitcoin-cash-node': {
       description:
-        'Bitcoin Cash Node provides the blockchain data and RPC interface required for mining.',
+        'Bitcoin Cash Node (BCHN or Knuth flavor) provides the blockchain data, RPC interface, and block notifications required for mining.',
       optional: false,
+      s9pk: null,
+    },
+    'bitcoin-cash-daemon': {
+      description:
+        'Bitcoin Cash Daemon (BCHD) is an alternative Go-based full node. Can be used alongside BCHN for redundancy or alternative RPC access.',
+      optional: true,
+      s9pk: null,
     },
   },
 })
