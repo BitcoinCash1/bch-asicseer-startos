@@ -1,6 +1,5 @@
 import { sdk } from '../sdk'
 import { poolPort, soloPort, poolInterfaceId, soloInterfaceId } from '../utils'
-import { storeJson } from '../file-models/store.json'
 
 export const connectionInfo = sdk.Action.withoutInput(
   'connection-info',
@@ -14,9 +13,6 @@ export const connectionInfo = sdk.Action.withoutInput(
     visibility: 'enabled' as const,
   }),
   async ({ effects }) => {
-    const store = await storeJson.read().once()
-    const payoutAddress = store?.payoutAddress ?? ''
-
     const poolIface = await sdk.serviceInterface
       .getOwn(effects, poolInterfaceId)
       .once()
@@ -75,10 +71,10 @@ export const connectionInfo = sdk.Action.withoutInput(
 
     members.push({
       name: 'Username',
-      description: 'Your BCH payout address — the pool requires a valid address as the stratum username',
+      description: 'Use your own BCH address as the stratum username — this is where mining rewards go',
       type: 'single' as const,
-      value: payoutAddress || '(configure payout address first)',
-      copyable: true,
+      value: '<your BCH address>',
+      copyable: false,
       qr: false,
       masked: false,
     })
@@ -107,7 +103,7 @@ export const connectionInfo = sdk.Action.withoutInput(
       version: '1' as const,
       title: 'Miner Connection Info',
       message:
-        'Point your ASIC or mining software to one of these stratum URLs. Use your BCH address as the username.',
+        'Point your ASIC or mining software to a stratum URL below. Set your own BCH payout address as the username — the pool pays directly to whatever address you configure on your miner.',
       result: {
         type: 'group' as const,
         value: members,

@@ -37,6 +37,10 @@ COPY assets/nginx.conf /etc/nginx/sites-available/default
 COPY assets/stats-api.sh /usr/local/bin/stats-api.sh
 RUN chmod +x /usr/local/bin/stats-api.sh
 
+# Pool/solo daemon entrypoint (runs stats-writer alongside asicseer)
+COPY assets/pool-entrypoint.sh /usr/local/bin/pool-entrypoint.sh
+RUN chmod +x /usr/local/bin/pool-entrypoint.sh
+
 # Entrypoint for UI daemon (starts stats updater + nginx)
 COPY assets/ui-entrypoint.sh /usr/local/bin/ui-entrypoint.sh
 RUN chmod +x /usr/local/bin/ui-entrypoint.sh

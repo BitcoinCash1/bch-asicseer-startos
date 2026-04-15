@@ -150,11 +150,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
       subcontainer: poolSub,
       exec: {
         command: [
-          'asicseer',
-          '-c',
+          'pool-entrypoint.sh',
+          'pool',
           `${rootDir}/pool/asicseer.conf`,
-          '-B',
-          '-k',
           `${rootDir}/pool/log`,
         ],
         sigtermTimeout: 30_000,
@@ -173,11 +171,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
       subcontainer: soloSub,
       exec: {
         command: [
-          'asicseer',
-          '-c',
+          'pool-entrypoint.sh',
+          'solo',
           `${rootDir}/solo/asicseer.conf`,
-          '-B',
-          '-k',
           `${rootDir}/solo/log`,
         ],
         sigtermTimeout: 30_000,

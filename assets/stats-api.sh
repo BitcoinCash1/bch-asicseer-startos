@@ -1,5 +1,9 @@
 #!/bin/sh
-# Periodically query ASICSeer + BCHN stats and write JSON for the WebUI
+# Periodically read pool/solo stats (written by pool-entrypoint.sh in each
+# daemon container) and query BCHN RPC, then assemble JSON for the WebUI.
+#
+# Pool/solo stats come from files on the shared volume because Unix domain
+# sockets don't cross subcontainer boundaries in StartOS.
 API_DIR="/var/www/html/api"
 CONF="/data/pool/asicseer.conf"
 mkdir -p "$API_DIR"
@@ -12,6 +16,15 @@ rpc_call() {
     -d "{\"jsonrpc\":\"1.0\",\"id\":1,\"method\":\"${METHOD}\",\"params\":[]}" \
     -H "Content-Type: application/json" \
     "http://${RPC_URL}" 2>/dev/null | jq -c '.result // empty' 2>/dev/null
+}
+
+# ── Helper: read a JSON file or return {} ──────────────────────────
+read_json() {
+  if [ -f "$1" ]; then
+    cat "$1" 2>/dev/null || echo '{}'
+  else
+    echo '{}'
+  fi
 }
 
 # ── Read RPC credentials from asicseer config ──────────────────────
@@ -29,23 +42,15 @@ while true; do
   # Reload creds if config changed (e.g. after reconfigure)
   load_rpc_creds
 
-  # ── Pool mode stats ──────────────────────────────────────────────
-  if [ -S /data/pool/run/stratifier ]; then
-    POOL_STATS=$(ckpmsg -s /data/pool/run/stratifier stats 2>/dev/null || echo '{}')
-    POOL_USERS=$(ckpmsg -s /data/pool/run/stratifier users 2>/dev/null || echo '{}')
-  else
-    POOL_STATS='{}'
-    POOL_USERS='{}'
-  fi
+  # ── Pool mode stats (read from shared volume, written by pool daemon container)
+  POOL_STATS=$(read_json /data/pool/stats.json)
+  POOL_USERS=$(read_json /data/pool/users.json)
+  POOL_WORKERS=$(read_json /data/pool/workers.json)
 
-  # ── Solo mode stats ──────────────────────────────────────────────
-  if [ -S /data/solo/run/stratifier ]; then
-    SOLO_STATS=$(ckpmsg -s /data/solo/run/stratifier stats 2>/dev/null || echo '{}')
-    SOLO_USERS=$(ckpmsg -s /data/solo/run/stratifier users 2>/dev/null || echo '{}')
-  else
-    SOLO_STATS='{}'
-    SOLO_USERS='{}'
-  fi
+  # ── Solo mode stats (read from shared volume, written by solo daemon container)
+  SOLO_STATS=$(read_json /data/solo/stats.json)
+  SOLO_USERS=$(read_json /data/solo/users.json)
+  SOLO_WORKERS=$(read_json /data/solo/workers.json)
 
   # ── Blockchain stats from BCHN RPC ──────────────────────────────
   CHAIN_INFO=$(rpc_call getblockchaininfo || echo '{}')
@@ -59,10 +64,10 @@ while true; do
   if [ -z "$MEMPOOL_INFO" ]; then MEMPOOL_INFO='{}'; fi
 
   # ── Write JSON files atomically ──────────────────────────────────
-  printf '%s' "{\"stats\":${POOL_STATS},\"users\":${POOL_USERS}}" > "${API_DIR}/pool-stats.json.tmp" && \
+  printf '%s' "{\"stats\":${POOL_STATS},\"users\":${POOL_USERS},\"workers\":${POOL_WORKERS}}" > "${API_DIR}/pool-stats.json.tmp" && \
     mv "${API_DIR}/pool-stats.json.tmp" "${API_DIR}/pool-stats.json"
 
-  printf '%s' "{\"stats\":${SOLO_STATS},\"users\":${SOLO_USERS}}" > "${API_DIR}/solo-stats.json.tmp" && \
+  printf '%s' "{\"stats\":${SOLO_STATS},\"users\":${SOLO_USERS},\"workers\":${SOLO_WORKERS}}" > "${API_DIR}/solo-stats.json.tmp" && \
     mv "${API_DIR}/solo-stats.json.tmp" "${API_DIR}/solo-stats.json"
 
   printf '%s' "{\"blockchain\":${CHAIN_INFO},\"mining\":${MINING_INFO},\"network\":${NET_INFO},\"mempool\":${MEMPOOL_INFO}}" \

@@ -16,6 +16,12 @@
     return n.toFixed(0) + ' H/s'
   }
 
+  // dsps (diff-shares-per-second) to H/s: multiply by 2^32
+  function dspsToHashrate(dsps) {
+    if (dsps == null || isNaN(dsps) || dsps <= 0) return null
+    return Number(dsps) * 4294967296
+  }
+
   function formatNumber(n) {
     if (n == null || isNaN(n)) return '—'
     return Number(n).toLocaleString()
@@ -52,6 +58,16 @@
     return mins + 'm'
   }
 
+  function timeAgo(unixSec) {
+    if (!unixSec || unixSec <= 0) return '—'
+    var diff = Math.floor(Date.now() / 1000) - unixSec
+    if (diff < 0) diff = 0
+    if (diff < 60) return diff + 's ago'
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago'
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago'
+    return Math.floor(diff / 86400) + 'd ago'
+  }
+
   function el(id) { return document.getElementById(id) }
 
   function updateCard(prefix, data) {
@@ -62,7 +78,7 @@
       stats.hashrate5m || stats.hashrate1m || stats.hashrate
     )
     el(prefix + '-workers').textContent = formatNumber(
-      users.connectedclients || stats.users || 0
+      users.connectedclients || stats.workers || stats.users || 0
     )
     el(prefix + '-blocks').textContent = formatNumber(
       stats.SolvedBlocks || stats.accepted || 0
@@ -80,7 +96,6 @@
     var net = data.network || {}
     var mem = data.mempool || {}
 
-    // Sync progress
     var progress = bc.verificationprogress
     if (progress != null) {
       var pct = Math.min(progress * 100, 100)
@@ -136,6 +151,87 @@
     }
   }
 
+  // Build a combined worker list from pool + solo data
+  function updateWorkers(poolData, soloData) {
+    var allWorkers = []
+
+    // Workers from pool mode
+    var pw = (poolData && poolData.workers) || {}
+    var poolList = pw.workers || []
+    for (var i = 0; i < poolList.length; i++) {
+      poolList[i]._mode = 'pool'
+      allWorkers.push(poolList[i])
+    }
+
+    // Workers from solo mode
+    var sw = (soloData && soloData.workers) || {}
+    var soloList = sw.workers || []
+    for (var j = 0; j < soloList.length; j++) {
+      soloList[j]._mode = 'solo'
+      allWorkers.push(soloList[j])
+    }
+
+    var tbody = el('workers-tbody')
+    var empty = el('workers-empty')
+    var wrap = el('workers-table-wrap')
+    var badge = el('worker-count-badge')
+
+    badge.textContent = allWorkers.length + ' connected'
+
+    if (allWorkers.length === 0) {
+      empty.style.display = ''
+      wrap.style.display = 'none'
+      return
+    }
+
+    empty.style.display = 'none'
+    wrap.style.display = ''
+
+    // Sort: active first, then by hashrate descending
+    allWorkers.sort(function (a, b) {
+      if (a.idle !== b.idle) return a.idle ? 1 : -1
+      var hrA = dspsToHashrate(a.dsps5) || 0
+      var hrB = dspsToHashrate(b.dsps5) || 0
+      return hrB - hrA
+    })
+
+    var html = ''
+    for (var k = 0; k < allWorkers.length; k++) {
+      var w = allWorkers[k]
+      var name = w.worker || w.user || '—'
+      // Strip the address prefix if worker name contains "." separator
+      var shortName = name
+      var dotIdx = name.indexOf('.')
+      if (dotIdx > 0) shortName = name.substring(dotIdx + 1)
+
+      var hr5m = formatHashrate(dspsToHashrate(w.dsps5))
+      var hr60 = formatHashrate(dspsToHashrate(w.dsps60))
+      var bestDiff = formatDifficulty(w.bestdiff)
+      var lastShare = timeAgo(w.lastshare)
+      var alive = !w.idle
+      var modeClass = w._mode
+
+      html += '<tr>'
+      html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span>'
+      html += '<span class="worker-mode ' + modeClass + '">' + w._mode + '</span></td>'
+      html += '<td>' + hr5m + '</td>'
+      html += '<td>' + hr60 + '</td>'
+      html += '<td>' + bestDiff + '</td>'
+      html += '<td>' + lastShare + '</td>'
+      html += '<td><span class="status-dot ' + (alive ? 'alive' : 'dead') + '"></span>'
+      html += (alive ? 'Active' : 'Idle') + '</td>'
+      html += '</tr>'
+    }
+
+    tbody.innerHTML = html
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div')
+    d.appendChild(document.createTextNode(s))
+    return d.innerHTML
+  }
+
   function fetchStats(url) {
     return fetch(url)
       .then(function (res) {
@@ -172,6 +268,7 @@
       updateCard('solo', soloData)
       updateBlockchain(nodeData)
       updateEta(poolData, soloData, nodeData)
+      updateWorkers(poolData, soloData)
     })
   }
 

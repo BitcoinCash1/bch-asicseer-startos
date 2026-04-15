@@ -203,7 +203,7 @@
           <div class="step-num">2</div>
           <div>
             <strong>Configure your miner</strong>
-            <p>Point your ASIC at <code>stratum+tcp://&lt;host&gt;:&lt;port&gt;</code>. Use your BCH payout address as the username (required). Any password works.</p>
+            <p>Point your ASIC at <code>stratum+tcp://&lt;host&gt;:&lt;port&gt;</code>. Use your BCH payout address as the username. Any password works.</p>
           </div>
         </div>
         <div class="step">
@@ -212,6 +212,34 @@
             <strong>Mix and match</strong>
             <p>You can point different miners to different modes. For example, your Antminer to pool mode and your Bitaxe to solo mode. No reconfiguration needed.</p>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workers Table -->
+    <div class="card wide">
+      <div class="card-header">
+        <h2>Workers</h2>
+        <span class="badge pool" id="worker-count-badge">0 connected</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="workers-empty" id="workers-empty">
+          <p>No miners connected yet. Point your ASIC at the stratum URL above to get started.</p>
+        </div>
+        <div class="workers-table-wrap" id="workers-table-wrap" style="display:none">
+          <table class="workers-table">
+            <thead>
+              <tr>
+                <th>Worker</th>
+                <th>Hashrate (5m)</th>
+                <th>Hashrate (1h)</th>
+                <th>Best Share</th>
+                <th>Last Share</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="workers-tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
