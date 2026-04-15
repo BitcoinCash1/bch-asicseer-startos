@@ -54,7 +54,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   )
 
   // ── Read node RPC credentials from mounted dependency ────────────
-  let rpcUser = nodeBackend
+  let rpcUser: string = nodeBackend
   let rpcPassword = ''
   try {
     const result = await poolSub.exec([
