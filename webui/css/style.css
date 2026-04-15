@@ -8,6 +8,8 @@
   --accent-dim: rgba(247, 147, 26, 0.15);
   --solo: #0ac18e;
   --solo-dim: rgba(10, 193, 142, 0.15);
+  --net: #58a6ff;
+  --net-dim: rgba(88, 166, 255, 0.15);
   --radius: 12px;
 }
 
@@ -21,7 +23,7 @@ body {
 }
 
 .container {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 24px 16px;
 }
@@ -30,7 +32,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .logo {
@@ -75,13 +77,27 @@ h1 {
   color: var(--accent);
 }
 
-.cards {
+/* ── Dashboard layout ───────────────────────────────────────────── */
+.dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr 340px;
   gap: 16px;
   margin-bottom: 16px;
 }
 
+@media (max-width: 768px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pool-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Cards ───────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -97,31 +113,27 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
 }
 
 .card-header h2 {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
 .badge {
   padding: 4px 10px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.badge.pool {
-  background: var(--accent-dim);
-  color: var(--accent);
-}
-
-.badge.solo {
-  background: var(--solo-dim);
-  color: var(--solo);
-}
+.badge.pool { background: var(--accent-dim); color: var(--accent); }
+.badge.solo { background: var(--solo-dim); color: var(--solo); }
+.badge.net  { background: var(--net-dim); color: var(--net); }
 
 .card-body {
   padding: 16px 20px;
@@ -131,7 +143,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -141,7 +153,14 @@ h1 {
 
 .label {
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.label.small {
+  font-size: 0.65rem;
+  margin-top: 2px;
 }
 
 .value {
@@ -150,18 +169,117 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.value.highlight {
+  color: var(--accent);
+}
+
 .card-footer {
-  padding: 12px 20px;
+  padding: 10px 20px;
   background: rgba(0,0,0,0.2);
   border-top: 1px solid var(--border);
 }
 
 .card-footer code {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--accent);
   word-break: break-all;
 }
 
+/* ── Blockchain sync hero ──────────────────────────────────────── */
+.sync-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sync-text {
+  flex: 1;
+}
+
+.sync-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.sync-pct {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.sync-sub {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.sync-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.sync-ring svg {
+  transform: rotate(-90deg);
+  width: 80px;
+  height: 80px;
+}
+
+.ring-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 8;
+}
+
+.ring-fg {
+  fill: none;
+  stroke: url(#ring-gradient);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 314;
+  stroke-dashoffset: 314;
+  transition: stroke-dashoffset 1s ease;
+}
+
+.ring-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── Stat grid (blockchain) ────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-box {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-box .value {
+  font-size: 1.1rem;
+}
+
+/* ── Guide ───────────────────────────────────────────────────── */
 .guide {
   display: flex;
   flex-direction: column;
@@ -197,6 +315,18 @@ h1 {
   color: var(--text-muted);
   font-size: 0.875rem;
   line-height: 1.5;
+}
+
+footer {
+  text-align: center;
+  padding: 16px 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+footer a {
+  color: var(--accent);
+  text-decoration: none;
 }
 
 .step code {

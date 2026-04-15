@@ -13,76 +13,151 @@
         <div class="logo-icon">🔍</div>
         <div>
           <h1>ASICSeer</h1>
-          <p class="subtitle">Bitcoin Cash Mining Pool</p>
+          <p class="subtitle">BCH Node + Mining Pool</p>
         </div>
       </div>
       <div class="status-badge" id="status-badge">Connecting...</div>
     </header>
 
-    <div class="cards">
-      <!-- Pool Mode Card -->
-      <div class="card">
+    <div class="dashboard">
+      <!-- Blockchain Section (left) -->
+      <div class="card blockchain-card">
         <div class="card-header">
-          <h2>Pool Mining</h2>
-          <span class="badge pool">Shared Rewards</span>
+          <h2>Blockchain</h2>
         </div>
         <div class="card-body">
-          <div class="stat-row">
-            <span class="label">Port</span>
-            <span class="value" id="pool-port">3334</span>
+          <div class="sync-hero">
+            <div class="sync-text">
+              <div class="sync-label">Synchronized</div>
+              <div class="sync-pct" id="sync-pct">—</div>
+              <div class="sync-sub" id="sync-sub">Waiting for node...</div>
+            </div>
+            <div class="sync-ring" id="sync-ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="ring-bg" cx="60" cy="60" r="50" />
+                <circle class="ring-fg" cx="60" cy="60" r="50" id="ring-progress" />
+              </svg>
+              <div class="ring-label" id="ring-label">—</div>
+            </div>
           </div>
-          <div class="stat-row">
-            <span class="label">Hashrate</span>
-            <span class="value" id="pool-hashrate">—</span>
+          <div class="stat-grid">
+            <div class="stat-box">
+              <span class="label">BLOCKS</span>
+              <span class="value" id="node-blocks">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">HEADERS</span>
+              <span class="value" id="node-headers">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">CHAIN LAG</span>
+              <span class="value" id="node-lag">—</span>
+              <span class="label small">BLOCKS BEHIND / AHEAD</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">PEERS</span>
+              <span class="value" id="node-peers">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">MEMPOOL</span>
+              <span class="value" id="node-mempool">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="label">DISK</span>
+              <span class="value" id="node-disk">—</span>
+            </div>
           </div>
-          <div class="stat-row">
-            <span class="label">Workers</span>
-            <span class="value" id="pool-workers">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="label">Blocks Found</span>
-            <span class="value" id="pool-blocks">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="label">Best Share</span>
-            <span class="value" id="pool-bestshare">—</span>
-          </div>
-        </div>
-        <div class="card-footer">
-          <code>stratum+tcp://&lt;host&gt;:3334</code>
         </div>
       </div>
 
-      <!-- Solo Mode Card -->
-      <div class="card">
-        <div class="card-header">
-          <h2>Solo Mining</h2>
-          <span class="badge solo">Winner Takes All</span>
+      <!-- Pool Section (right) -->
+      <div class="pool-stack">
+        <!-- Pool Mining Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Pool Mining</h2>
+            <span class="badge pool">Stratum v1</span>
+          </div>
+          <div class="card-body">
+            <div class="stat-row">
+              <span class="label">Port</span>
+              <span class="value" id="pool-port">3334</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Workers</span>
+              <span class="value" id="pool-workers">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Hashrate</span>
+              <span class="value" id="pool-hashrate">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Blocks Found</span>
+              <span class="value" id="pool-blocks">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Best Share</span>
+              <span class="value" id="pool-bestshare">—</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <code>stratum+tcp://&lt;host&gt;:3334</code>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="stat-row">
-            <span class="label">Port</span>
-            <span class="value" id="solo-port">4568</span>
+
+        <!-- Solo Mining Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Solo Mining</h2>
+            <span class="badge solo">Winner Takes All</span>
           </div>
-          <div class="stat-row">
-            <span class="label">Hashrate</span>
-            <span class="value" id="solo-hashrate">—</span>
+          <div class="card-body">
+            <div class="stat-row">
+              <span class="label">Port</span>
+              <span class="value" id="solo-port">4568</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Workers</span>
+              <span class="value" id="solo-workers">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Hashrate</span>
+              <span class="value" id="solo-hashrate">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Blocks Found</span>
+              <span class="value" id="solo-blocks">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Best Share</span>
+              <span class="value" id="solo-bestshare">—</span>
+            </div>
           </div>
-          <div class="stat-row">
-            <span class="label">Workers</span>
-            <span class="value" id="solo-workers">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="label">Blocks Found</span>
-            <span class="value" id="solo-blocks">—</span>
-          </div>
-          <div class="stat-row">
-            <span class="label">Best Share</span>
-            <span class="value" id="solo-bestshare">—</span>
+          <div class="card-footer">
+            <code>stratum+tcp://&lt;host&gt;:4568</code>
           </div>
         </div>
-        <div class="card-footer">
-          <code>stratum+tcp://&lt;host&gt;:4568</code>
+
+        <!-- Network Stats Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Network</h2>
+            <span class="badge net">SHA256D</span>
+          </div>
+          <div class="card-body">
+            <div class="stat-row">
+              <span class="label">Network Difficulty</span>
+              <span class="value" id="net-difficulty">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">Network Hashrate</span>
+              <span class="value" id="net-hashrate">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="label">ETA to Find Block</span>
+              <span class="value highlight" id="eta-block">—</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -118,7 +193,7 @@
     </div>
 
     <footer>
-      <p>ASICSeer for StartOS — <a href="https://github.com/BitcoinCash1/bch-asicseer-startos">GitHub</a></p>
+      <p>Powered by <a href="https://github.com/cculianu/asicseer-pool" target="_blank">ASICSeer Pool</a> · Stratum v1 · For StartOS</p>
     </footer>
   </div>
   <script src="js/app.js"></script>

@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    nginx libssl3 libjansson4 libzmq5 && \
+    nginx libssl3 libjansson4 libzmq5 curl jq && \
     rm -rf /var/lib/apt/lists/*
 
 # ASICSeer binaries
