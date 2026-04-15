@@ -36,6 +36,9 @@ jobs:
 
       - name: Build service packages
         run: |
+          npm ci
+          npm run check
+          npm run build
           RUST_LOG=debug RUST_BACKTRACE=1 make
           echo ""
           echo "SHA256SUMs:"
