@@ -8,7 +8,7 @@ RUN apt-get update && \
     git ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/plebeminux/asicseer-pool.git /build/asicseer
+RUN git clone https://github.com/cculianu/asicseer-pool.git /build/asicseer
 WORKDIR /build/asicseer
 RUN ./autogen.sh && ./configure && make
 
