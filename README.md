@@ -146,17 +146,42 @@ The script installs `/etc/libvirt/hooks/qemu` — the [official libvirt hook mec
 
 No bridges, NetworkManager changes, or DNS changes. Just iptables rules managed by the official libvirt hook system.
 
-### Windows / macOS (VirtualBox, VMware, etc.)
+### One-Command Setup (Windows)
 
-If you run StartOS in **VirtualBox** or **VMware**:
+Supports **VirtualBox** and **Hyper-V**. Open PowerShell **as Administrator** and run:
 
-1. **Bridged Networking (recommended):** Change the VM's network adapter to "Bridged" mode. The VM will get its own IP on your LAN and miners can connect directly — no port forwarding needed.
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/BitcoinCash1/bch-asicseer-startos/master/scripts/setup-vm-forwarding.ps1" -OutFile setup-vm-forwarding.ps1
+.\setup-vm-forwarding.ps1
+```
 
-2. **NAT with Port Forwarding:** If you must use NAT mode:
-   - **VirtualBox:** `VBoxManage modifyvm "StartOS" --natpf1 "pool,tcp,,3334,,3334" --natpf1 "solo,tcp,,4568,,4568" --natpf1 "web,tcp,,81,,81"`
-   - **VMware:** Edit the NAT configuration in `vmnetcfg.exe` (Windows) or `/Library/Preferences/VMware Fusion/vmnet8/nat.conf` (macOS) to add port forwards for 3334, 4568, and 81.
+The script will auto-detect your VM and hypervisor, set up port forwarding, save a `Miner-Connection-Info.txt` to your Desktop, and open a copyable popup with your stratum URLs.
 
-For **Hyper-V** on Windows, use an External virtual switch (equivalent to bridged mode).
+```powershell
+# Management
+.\setup-vm-forwarding.ps1 -Status       # show current state
+.\setup-vm-forwarding.ps1 -Remove       # uninstall everything
+.\setup-vm-forwarding.ps1 -VMName "My VM"  # specify VM name
+```
+
+### One-Command Setup (macOS)
+
+Supports **VirtualBox** and **UTM**. Open Terminal and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BitcoinCash1/bch-asicseer-startos/master/scripts/setup-vm-forwarding-mac.sh -o setup-vm-forwarding-mac.sh
+chmod +x setup-vm-forwarding-mac.sh
+sudo ./setup-vm-forwarding-mac.sh
+```
+
+Same features: auto-detect, Desktop txt file, popup with Copy to Clipboard button.
+
+```bash
+sudo ./setup-vm-forwarding-mac.sh --status    # show current state
+sudo ./setup-vm-forwarding-mac.sh --remove    # uninstall everything
+```
+
+> **Tip (all platforms):** If you use **Bridged Networking** instead of NAT, the VM gets its own LAN IP and miners can connect directly — no port forwarding script needed.
 
 ### Troubleshooting
 
@@ -167,6 +192,9 @@ For **Hyper-V** on Windows, use an External virtual switch (equivalent to bridge
 | Miner connects but pool shows no hashrate | Check that the pool service is running on StartOS (Actions → Start) |
 | Port forwarding stops after reboot | The hook should auto-apply when the VM starts. Run `sudo ./setup-vm-forwarding.sh --status` to verify the hook file exists |
 | Want to undo everything | `sudo ./setup-vm-forwarding.sh --remove` restores your system completely |
+| Windows: "execution policy" error | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first |
+| macOS: VBox rules need VM stopped | Shut down the VM, run the script, then start the VM |
+| macOS UTM: need guest IP | Find it inside StartOS (System → Network) and enter when prompted |
 
 ## Building from Source
 
