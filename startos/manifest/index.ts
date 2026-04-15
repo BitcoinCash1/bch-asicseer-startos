@@ -5,12 +5,12 @@ export const manifest = setupManifest({
   title: 'ASICSeer',
   license: 'GPL-3.0',
   packageRepo: 'https://github.com/BitcoinCash1/bch-asicseer-startos',
-  upstreamRepo: 'https://github.com/plebeminux/asicseer-pool',
-  marketingUrl: 'https://github.com/plebeminux/asicseer-pool',
+  upstreamRepo: 'https://github.com/cculianu/asicseer-pool',
+  marketingUrl: 'https://github.com/cculianu/asicseer-pool',
   donationUrl: null,
   docsUrls: [
     'https://github.com/BitcoinCash1/bch-asicseer-startos/blob/master/README.md',
-    'https://github.com/plebeminux/asicseer-pool',
+    'https://github.com/cculianu/asicseer-pool',
   ],
   description: {
     short: 'ASICSeer — BCH mining pool with pool & solo modes',

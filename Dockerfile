@@ -3,14 +3,13 @@ FROM ubuntu:22.04 AS build-asicseer
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    build-essential autoconf automake libtool pkg-config \
-    libssl-dev libjansson-dev libzmq3-dev \
+    build-essential cmake libzmq3-dev \
     git ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/cculianu/asicseer-pool.git /build/asicseer
 WORKDIR /build/asicseer
-RUN ./autogen.sh && ./configure && make
+RUN mkdir out && cd out && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
 # ── Runtime ─────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim
@@ -22,9 +21,11 @@ RUN apt-get update && \
     nginx libssl3 libjansson4 libzmq5 && \
     rm -rf /var/lib/apt/lists/*
 
-# ASICSeer binaries (same names as ckpool)
-COPY --from=build-asicseer /build/asicseer/src/ckpool /usr/local/bin/asicseer
-COPY --from=build-asicseer /build/asicseer/src/ckpmsg /usr/local/bin/ckpmsg
+# ASICSeer binaries
+COPY --from=build-asicseer /build/asicseer/out/src/asicseer-pool /usr/local/bin/asicseer
+COPY --from=build-asicseer /build/asicseer/out/src/asicseer-pmsg /usr/local/bin/ckpmsg
+COPY --from=build-asicseer /build/asicseer/out/src/notifier /usr/local/bin/notifier
+COPY --from=build-asicseer /build/asicseer/out/src/summariser /usr/local/bin/summariser
 
 # WebUI static files
 COPY webui/ /var/www/html/
