@@ -3,7 +3,7 @@ FROM ubuntu:22.04 AS build-asicseer
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    build-essential autoconf automake libtool \
+    build-essential autoconf automake libtool pkg-config \
     libssl-dev libjansson-dev libzmq3-dev \
     git ca-certificates && \
     rm -rf /var/lib/apt/lists/*
