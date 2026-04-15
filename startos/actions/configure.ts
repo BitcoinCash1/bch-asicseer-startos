@@ -2,17 +2,6 @@ import { sdk } from '../sdk'
 import { storeJson } from '../file-models/store.json'
 
 const configSpec = sdk.InputSpec.of({
-  nodeBackend: sdk.Value.select({
-    name: 'Node Backend',
-    description:
-      'Which BCH full node to use for mining. Must be installed and running on this StartOS server. All three nodes provide the RPC interface needed for mining.',
-    default: 'bitcoin-cash-node',
-    values: {
-      'bitcoin-cash-node': 'Bitcoin Cash Node (BCHN)',
-      'knuth-bch': 'Knuth',
-      'bitcoin-cash-daemon': 'Bitcoin Cash Daemon (BCHD)',
-    },
-  }),
   payoutAddress: sdk.Value.text({
     name: 'Payout Address',
     description:
@@ -76,7 +65,6 @@ export const configure = sdk.Action.withInput(
   async ({ effects }) => {
     const store = await storeJson.read().once()
     return {
-      nodeBackend: store?.nodeBackend ?? 'bitcoin-cash-node',
       payoutAddress: store?.payoutAddress ?? '',
       poolFee: store?.poolFee ?? 1,
       poolIdentifier: store?.poolIdentifier ?? 'ASICSeer',
@@ -86,7 +74,6 @@ export const configure = sdk.Action.withInput(
 
   async ({ effects, input }) => {
     await storeJson.merge(effects, {
-      nodeBackend: input.nodeBackend as any,
       payoutAddress: input.payoutAddress,
       poolFee: input.poolFee,
       poolIdentifier: input.poolIdentifier,

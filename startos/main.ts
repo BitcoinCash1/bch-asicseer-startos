@@ -1,5 +1,5 @@
 import { sdk } from './sdk'
-import { poolPort, soloPort, uiPort, rootDir, nodeHostnames, nodeMountpoints, NodeBackend } from './utils'
+import { poolPort, soloPort, uiPort, rootDir, nodeHost, nodeMountpoint } from './utils'
 import { storeJson } from './file-models/store.json'
 
 export const main = sdk.setupMain(async ({ effects }) => {
@@ -10,10 +10,6 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const poolFee = store?.poolFee ?? 1
   const poolIdentifier = store?.poolIdentifier ?? 'ASICSeer'
   const poolDifficulty = store?.poolDifficulty ?? 64
-  const nodeBackend = (store?.nodeBackend ?? 'bitcoin-cash-node') as NodeBackend
-
-  const nodeHost = nodeHostnames[nodeBackend]
-  const nodeMountpoint = nodeMountpoints[nodeBackend]
 
   // ── Mounts ───────────────────────────────────────────────────────
   const mounts = sdk.Mounts.of()
@@ -24,7 +20,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       readonly: false,
     })
     .mountDependency({
-      dependencyId: nodeBackend,
+      dependencyId: 'bitcoin-cash-node',
       volumeId: 'main',
       subpath: null,
       mountpoint: nodeMountpoint,
@@ -54,7 +50,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   )
 
   // ── Read node RPC credentials from mounted dependency ────────────
-  let rpcUser: string = nodeBackend
+  let rpcUser = 'bitcoin-cash-node'
   let rpcPassword = ''
   try {
     const result = await poolSub.exec([
@@ -70,7 +66,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       rpcPassword = nodeStore.rpcPassword ?? rpcPassword
     }
   } catch {
-    console.warn(`Could not read ${nodeBackend} store.json — using defaults`)
+    console.warn('Could not read bitcoin-cash-node store.json — using defaults')
   }
 
   await storeJson.merge(effects, {

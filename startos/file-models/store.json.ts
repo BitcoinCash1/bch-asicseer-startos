@@ -6,7 +6,6 @@ export const shape = z.object({
   poolFee: z.number().catch(1),
   poolIdentifier: z.string().catch('ASICSeer'),
   poolDifficulty: z.number().catch(64),
-  nodeBackend: z.enum(['bitcoin-cash-node', 'knuth-bch', 'bitcoin-cash-daemon']).catch('bitcoin-cash-node'),
   nodeRpcUser: z.string().catch(''),
   nodeRpcPassword: z.string().catch(''),
 })
