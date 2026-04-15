@@ -220,6 +220,9 @@ if [ "${1}" = "${VM_NAME}" ]; then
             /sbin/iptables -t nat -D POSTROUTING -s "${GUEST_IP}" \
                 -o "${IFACE}" -j MASQUERADE 2>/dev/null || true
         done
+        # Remove MASQUERADE for forwarded traffic to VM
+        /sbin/iptables -t nat -D POSTROUTING -o "${LIBVIRT_BRIDGE}" \
+            -d "${GUEST_IP}" -j MASQUERADE 2>/dev/null || true
     fi
 
     # ── VM started: install forwarding rules ─────────────────────────────
@@ -234,6 +237,9 @@ if [ "${1}" = "${VM_NAME}" ]; then
             /sbin/iptables -t nat -I POSTROUTING 1 -s "${GUEST_IP}" \
                 -o "${IFACE}" -j MASQUERADE
         done
+        # MASQUERADE forwarded traffic so VM sees it from its local gateway
+        /sbin/iptables -t nat -I POSTROUTING 1 -o "${LIBVIRT_BRIDGE}" \
+            -d "${GUEST_IP}" -j MASQUERADE
     fi
 fi
 HOOKEOF
@@ -263,6 +269,8 @@ if [[ "$VM_STATE" == "running" ]]; then
         done
         iptables -t nat -I POSTROUTING 1 -s "$GUEST_IP" -o "$IFACE" -j MASQUERADE 2>/dev/null || true
     done
+    # MASQUERADE forwarded traffic so VM sees it from its local gateway
+    iptables -t nat -I POSTROUTING 1 -o virbr0 -d "$GUEST_IP" -j MASQUERADE 2>/dev/null || true
     info "Forwarding rules active"
 else
     warn "VM is not running. Rules will activate automatically when you start it."
