@@ -36,7 +36,7 @@ export const manifest = setupManifest({
     stop: 'Stopping ASICSeer will disconnect all active miners.',
   },
   dependencies: {
-    'bitcoin-cash-node': {
+    bitcoincashd: {
       description:
         'Bitcoin Cash full node providing the JSON-RPC interface needed for mining. Supports BCHN and Knuth implementations.',
       optional: false,

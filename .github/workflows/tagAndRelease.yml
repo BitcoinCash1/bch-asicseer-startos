@@ -36,9 +36,6 @@ jobs:
 
       - name: Build service packages
         run: |
-          npm ci
-          npm run check
-          npm run build
           RUST_LOG=debug RUST_BACKTRACE=1 make
           echo ""
           echo "SHA256SUMs:"
@@ -46,13 +43,17 @@ jobs:
         shell: bash
 
       - name: Generate changelog
-        id: changelog
+        id: meta
         run: |
           FIRST_S9PK=$(ls *.s9pk | head -1)
           TITLE=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.title')
+          VERSION=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.version')
+          VERSION_TAG="v${VERSION/:/.}"
           RELEASE_NOTES=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.releaseNotes // "No release notes provided."')
           {
             echo "## What's Changed"
+            echo ""
+            echo "Version: ${VERSION} (${VERSION_TAG})"
             echo ""
             echo "${RELEASE_NOTES}"
             echo ""
@@ -61,21 +62,34 @@ jobs:
             sha256sum *.s9pk
             echo '```'
           } > change-log.txt
-          echo "release_name=${TITLE} - Latest Stable" >> "$GITHUB_OUTPUT"
+          echo "title=${TITLE}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "vtag=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
         shell: bash
 
-      - name: Move release tag to current commit
+      - name: Move release tags to current commit
         run: |
           git config user.email "action@github.com"
           git config user.name "GitHub Action"
+          git tag -f "${{ steps.meta.outputs.vtag }}"
+          git push origin -f "${{ steps.meta.outputs.vtag }}"
           git tag -f latest
           git push origin -f latest
 
-      - name: Publish release
+      - name: Publish versioned release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.vtag }}
+          name: ${{ steps.meta.outputs.title }} ${{ steps.meta.outputs.version }}
+          prerelease: false
+          body_path: change-log.txt
+          files: ./*.s9pk
+
+      - name: Publish latest release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: ${{ steps.changelog.outputs.release_name }}
+          name: ${{ steps.meta.outputs.title }} - Latest Stable
           prerelease: false
           body_path: change-log.txt
           files: ./*.s9pk

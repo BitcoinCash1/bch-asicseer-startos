@@ -6,5 +6,5 @@ export const soloInterfaceId = 'solo-mining'
 export const uiInterfaceId = 'web-ui'
 export const rootDir = '/data'
 
-export const nodeHost = 'bitcoin-cash-node.startos'
-export const nodeMountpoint = '/mnt/bitcoin-cash-node'
+export const nodeHost = 'bitcoincashd.startos'
+export const nodeMountpoint = '/mnt/bitcoincashd'

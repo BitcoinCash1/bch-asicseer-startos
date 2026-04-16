@@ -20,7 +20,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       readonly: false,
     })
     .mountDependency({
-      dependencyId: 'bitcoin-cash-node',
+      dependencyId: 'bitcoincashd',
       volumeId: 'main',
       subpath: null,
       mountpoint: nodeMountpoint,
@@ -50,7 +50,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   )
 
   // ── Read node RPC credentials from mounted dependency ────────────
-  let rpcUser = 'bitcoin-cash-node'
+  let rpcUser = 'bitcoincashd'
   let rpcPassword = ''
   try {
     const result = await poolSub.exec([
@@ -66,7 +66,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       rpcPassword = nodeStore.rpcPassword ?? rpcPassword
     }
   } catch {
-    console.warn('Could not read bitcoin-cash-node store.json — using defaults')
+    console.warn('Could not read bitcoincashd store.json — using defaults')
   }
 
   await storeJson.merge(effects, {
