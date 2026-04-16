@@ -42,6 +42,7 @@ export const selectNode = sdk.Action.withInput(
   async ({ effects, input }) => {
     await storeJson.merge(effects, {
       nodePackageId: input.nodePackageId,
+      nodeConfirmed: true,
     })
   },
 )

@@ -3,6 +3,7 @@ import { sdk } from '../sdk'
 
 export const shape = z.object({
   nodePackageId: z.string().catch('bitcoincashd'),
+  nodeConfirmed: z.boolean().catch(true),
   payoutAddress: z.string().catch(''),
   poolFee: z.number().catch(1),
   poolIdentifier: z.string().catch('ASICSeer'),

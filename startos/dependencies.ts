@@ -7,32 +7,34 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   const store = await storeJson.read().const(effects)
   const nodePackageId = store?.nodePackageId ?? 'bitcoincashd'
 
-  if (nodePackageId === 'bchd') {
-    // BCHD: ensure pruning off (mining needs full chain)
-    await sdk.action.createTask(effects, 'bchd', bchdAutoconfig, 'critical', {
-      input: {
-        kind: 'partial',
-        value: {
-          prune: 0,
+  if (store?.nodeConfirmed) {
+    if (nodePackageId === 'bchd') {
+      // BCHD: ensure pruning off (mining needs full chain)
+      await sdk.action.createTask(effects, 'bchd', bchdAutoconfig, 'critical', {
+        input: {
+          kind: 'partial',
+          value: {
+            prune: 0,
+          },
         },
-      },
-      reason:
-        'Pruning must be disabled for mining pool operation.',
-      when: { condition: 'input-not-matches', once: false },
-    })
-  } else {
-    // BCHN: ensure pruning off
-    await sdk.action.createTask(effects, nodePackageId, bchnAutoconfig, 'critical', {
-      input: {
-        kind: 'partial',
-        value: {
-          prune: 0,
+        reason:
+          'Pruning must be disabled for mining pool operation.',
+        when: { condition: 'input-not-matches', once: false },
+      })
+    } else {
+      // BCHN: ensure pruning off
+      await sdk.action.createTask(effects, nodePackageId, bchnAutoconfig, 'critical', {
+        input: {
+          kind: 'partial',
+          value: {
+            prune: 0,
+          },
         },
-      },
-      reason:
-        'Pruning must be disabled for mining pool operation.',
-      when: { condition: 'input-not-matches', once: false },
-    })
+        reason:
+          'Pruning must be disabled for mining pool operation.',
+        when: { condition: 'input-not-matches', once: false },
+      })
+    }
   }
 
   const deps: Record<string, { kind: 'running'; versionRange: string; healthChecks: string[] }> = {}
