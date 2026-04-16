@@ -90,7 +90,7 @@ read_workers_data() {
           dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
           bestdiff:  (.bestshare // 0),
           lastshare: (.lastshare // 0),
-          idle:      ((.lastshare // 0) < ($now - 600))
+          idle:      ((.lastshare // 0) < ($now - 60))
         }]
       ' "$FILE" 2>/dev/null) || continue
 
