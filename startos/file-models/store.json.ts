@@ -2,6 +2,7 @@ import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
 
 export const shape = z.object({
+  nodePackageId: z.string().catch('bitcoincashd'),
   payoutAddress: z.string().catch(''),
   poolFee: z.number().catch(1),
   poolIdentifier: z.string().catch('ASICSeer'),

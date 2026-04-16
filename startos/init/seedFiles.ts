@@ -5,6 +5,7 @@ export const seedFiles = sdk.setupOnInit(async (effects) => {
   const existing = await storeJson.read().once()
   if (!existing?.payoutAddress) {
     await storeJson.merge(effects, {
+      nodePackageId: 'bitcoincashd',
       payoutAddress: '',
       poolFee: 1,
       poolIdentifier: 'ASICSeer',

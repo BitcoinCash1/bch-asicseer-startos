@@ -38,8 +38,14 @@ export const manifest = setupManifest({
   dependencies: {
     bitcoincashd: {
       description:
-        'Bitcoin Cash full node providing the JSON-RPC interface needed for mining. Supports BCHN and Knuth implementations.',
-      optional: false,
+        'Bitcoin Cash Node — C++ full node providing the JSON-RPC interface for mining.',
+      optional: true,
+      s9pk: null,
+    },
+    bchd: {
+      description:
+        'BCHD — Go-based full node providing the JSON-RPC interface for mining. An alternative to BCHN.',
+      optional: true,
       s9pk: null,
     },
   },

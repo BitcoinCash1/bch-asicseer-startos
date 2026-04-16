@@ -5,6 +5,4 @@ export const poolInterfaceId = 'pool-mining'
 export const soloInterfaceId = 'solo-mining'
 export const uiInterfaceId = 'web-ui'
 export const rootDir = '/data'
-
-export const nodeHost = 'bitcoincashd.startos'
-export const nodeMountpoint = '/mnt/bitcoincashd'
+export const nodeMountpoint = '/mnt/node'
