@@ -187,9 +187,12 @@
     empty.style.display = 'none'
     wrap.style.display = ''
 
-    // Sort: active first, then by hashrate descending
+    // Sort: alive first, idle second, dead last, then by hashrate descending
+    var statusOrder = { alive: 0, idle: 1, dead: 2 }
     allWorkers.sort(function (a, b) {
-      if (a.idle !== b.idle) return a.idle ? 1 : -1
+      var sa = statusOrder[a.status] != null ? statusOrder[a.status] : 2
+      var sb = statusOrder[b.status] != null ? statusOrder[b.status] : 2
+      if (sa !== sb) return sa - sb
       var hrA = dspsToHashrate(a.dsps5) || 0
       var hrB = dspsToHashrate(b.dsps5) || 0
       return hrB - hrA
@@ -223,7 +226,8 @@
       var hr60 = formatHashrate(dspsToHashrate(w.dsps60))
       var bestDiff = formatDifficulty(w.bestdiff)
       var lastShare = timeAgo(w.lastshare)
-      var alive = !w.idle
+      var status = w.status || (w.idle ? 'dead' : 'alive')
+      var statusLabel = status === 'alive' ? 'Alive' : status === 'idle' ? 'Idle' : 'Dead'
       var modeClass = w._mode
 
       html += '<tr>'
@@ -233,8 +237,8 @@
       html += '<td>' + hr60 + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '<td>' + lastShare + '</td>'
-      html += '<td><span class="status-dot ' + (alive ? 'alive' : 'dead') + '"></span>'
-      html += (alive ? 'Active' : 'Idle') + '</td>'
+      html += '<td><span class="status-dot ' + status + '"></span>'
+      html += statusLabel + '</td>'
       html += '</tr>'
     }
 

@@ -7,6 +7,15 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   const store = await storeJson.read().const(effects)
   const nodePackageId = store?.nodePackageId ?? 'bitcoincashd'
 
+  // Purge stale tasks from previous node selections
+  await sdk.action.clearTask(
+    effects,
+    'bitcoincashd:autoconfig',
+    'bchd:autoconfig',
+    'bitcoincashd-autoconfig',
+    'bchd-autoconfig',
+  )
+
   if (store?.nodeConfirmed) {
     if (nodePackageId === 'bchd') {
       // BCHD: ensure pruning off (mining needs full chain)

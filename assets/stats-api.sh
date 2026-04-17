@@ -84,14 +84,20 @@ read_workers_data() {
       [ -f "$FILE" ] || continue
 
       PARSED=$(jq -c --argjson now "$NOW" "$JQ_DEFS"'
-        [(.worker // [])[] | {
-          worker:    .workername,
-          dsps5:     (((.hashrate5m  // "0") | hr2n) / 4294967296),
-          dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
-          bestdiff:  (.bestshare // 0),
-          lastshare: (.lastshare // 0),
-          idle:      ((.lastshare // 0) < ($now - 60))
-        }]
+        [(.worker // [])[] |
+          ((.lastshare // 0) as $ls |
+          (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
+           elif ($now - $ls) > 300 then "idle"
+           else "alive" end) as $status |
+          {
+            worker:    .workername,
+            dsps5:     (((.hashrate5m  // "0") | hr2n) / 4294967296),
+            dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
+            bestdiff:  (.bestshare // 0),
+            lastshare: (.lastshare // 0),
+            idle:      ($status != "alive"),
+            status:    $status
+          })]
       ' "$FILE" 2>/dev/null) || continue
 
       WORKERS=$(printf '%s\n%s\n' "$WORKERS" "$PARSED" | jq -cs 'add' 2>/dev/null || echo "$WORKERS")
