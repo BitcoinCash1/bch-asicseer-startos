@@ -69,6 +69,14 @@
     return Math.floor(diff / 86400) + 'd ago'
   }
 
+  function normalizeAddress(raw) {
+    var s = String(raw || '').trim().toLowerCase()
+    if (!s) return ''
+    if (s.indexOf('.') > 0) s = s.substring(0, s.indexOf('.'))
+    if (s.indexOf('bitcoincash:') === 0) s = s.substring('bitcoincash:'.length)
+    return s
+  }
+
   function el(id) { return document.getElementById(id) }
 
   function updateCard(prefix, data) {
@@ -248,10 +256,6 @@
     // Update my devices panel if logged in
     updateMyDevices(allWorkers)
   }
-    var d = document.createElement('div')
-    d.appendChild(document.createTextNode(s))
-    return d.innerHTML
-  }
 
   function escapeHtml(s) {
     var d = document.createElement('div')
@@ -305,11 +309,11 @@
   function updateMyDevices(allWorkers) {
     if (!loggedInAddress) return
 
+    var wanted = normalizeAddress(loggedInAddress)
+
     var myWorkers = allWorkers.filter(function (w) {
       var name = w.worker || w.user || ''
-      // Match: exact address, or address.suffix
-      var addr = name.indexOf('.') > 0 ? name.substring(0, name.indexOf('.')) : name
-      return addr === loggedInAddress
+      return normalizeAddress(name) === wanted
     })
 
     var empty = el('my-devices-empty')

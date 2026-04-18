@@ -73,8 +73,6 @@ jobs:
           git config user.name "GitHub Action"
           git tag -f "${{ steps.meta.outputs.vtag }}"
           git push origin -f "${{ steps.meta.outputs.vtag }}"
-          git tag -f latest
-          git push origin -f latest
 
       - name: Publish versioned release
         uses: softprops/action-gh-release@v2
@@ -85,11 +83,3 @@ jobs:
           body_path: change-log.txt
           files: ./*.s9pk
 
-      - name: Publish latest release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: ${{ steps.meta.outputs.title }} - Latest Stable
-          prerelease: false
-          body_path: change-log.txt
-          files: ./*.s9pk
