@@ -77,6 +77,24 @@
     return s
   }
 
+  function workerStatus(w) {
+    var reported = String(w && w.status || '').toLowerCase()
+    var hr5 = Number((w && w.dsps5) || 0)
+    var hr60 = Number((w && w.dsps60) || 0)
+    if (hr5 > 0 || hr60 > 0) return 'alive'
+
+    var lastShare = Number((w && w.lastshare) || 0)
+    if (lastShare > 0) {
+      var ageSec = Math.floor(Date.now() / 1000) - lastShare
+      if (ageSec < 300) return 'alive'
+      if (ageSec < 3600) return 'idle'
+      return 'dead'
+    }
+
+    if (reported === 'alive' || reported === 'idle' || reported === 'dead') return reported
+    return w && w.idle ? 'idle' : 'alive'
+  }
+
   function el(id) { return document.getElementById(id) }
 
   function updateCard(prefix, data) {
@@ -235,7 +253,7 @@
       var hr60 = formatHashrate(dspsToHashrate(w.dsps60))
       var bestDiff = formatDifficulty(w.bestdiff)
       var lastShare = timeAgo(w.lastshare)
-      var status = w.status || (w.idle ? 'dead' : 'alive')
+      var status = workerStatus(w)
       var statusLabel = status === 'alive' ? 'Alive' : status === 'idle' ? 'Idle' : 'Dead'
       var modeClass = w._mode
 
@@ -346,7 +364,7 @@
 
       var hr5m = formatHashrate(dspsToHashrate(w.dsps5))
       var bestDiff = formatDifficulty(w.bestdiff)
-      var status = w.status || (w.idle ? 'dead' : 'alive')
+      var status = workerStatus(w)
       var statusLabel = status === 'alive' ? 'Yes' : 'No'
 
       html += '<tr>'
