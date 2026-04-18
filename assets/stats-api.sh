@@ -85,14 +85,24 @@ read_workers_data() {
 
       PARSED=$(jq -c --argjson now "$NOW" "$JQ_DEFS"'
         [(.worker // [])[] |
+          (((.hashrate5m  // "0") | hr2n) as $hr5 |
+          ((.hashrate1hr // "0") | hr2n) as $hr1h |
+          ((.hashrate1d  // "0") | hr2n) as $hr1d |
+          ((.hashrate7d  // "0") | hr2n) as $hr7d |
           ((.lastshare // 0) as $ls |
-          (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
-           elif ($now - $ls) > 300 then "idle"
+          (if ($hr5 > 0 or $hr1h > 0) then "alive"
+           elif ($hr1d > 0 or $hr7d > 0) then "idle"
+           elif ($ls <= 0 or ($now - $ls) > 86400) then "dead"
+           elif ($now - $ls) > 3600 then "idle"
            else "alive" end) as $status |
           {
             worker:    .workername,
-            dsps5:     (((.hashrate5m  // "0") | hr2n) / 4294967296),
-            dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
+            dsps5:     ($hr5 / 4294967296),
+            dsps60:    ($hr1h / 4294967296),
+            hashrate5m: $hr5,
+            hashrate1hr: $hr1h,
+            hashrate1d: $hr1d,
+            hashrate7d: $hr7d,
             bestdiff:  (.bestshare // 0),
             lastshare: (.lastshare // 0),
             idle:      ($status != "alive"),

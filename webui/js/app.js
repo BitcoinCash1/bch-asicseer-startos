@@ -81,8 +81,10 @@
     var reported = String(w && w.status || '').toLowerCase()
     var hr5 = Number((w && w.dsps5) || 0)
     var hr60 = Number((w && w.dsps60) || 0)
-    var altHr = Number((w && (w.hashrate5m || w.hashrate1m || w.hashrate)) || 0)
-    if (hr5 > 0 || hr60 > 0 || altHr > 0) return 'alive'
+    var altHrShort = Number((w && (w.hashrate5m || w.hashrate1m || w.hashrate)) || 0)
+    var altHrLong = Number((w && (w.hashrate1hr || w.hashrate1d || w.hashrate7d)) || 0)
+    if (hr5 > 0 || hr60 > 0 || altHrShort > 0) return 'alive'
+    if (altHrLong > 0) return 'idle'
 
     var lastShare = Number((w && w.lastshare) || 0)
     if (lastShare > 0) {
