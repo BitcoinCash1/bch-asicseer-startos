@@ -81,7 +81,8 @@
     var reported = String(w && w.status || '').toLowerCase()
     var hr5 = Number((w && w.dsps5) || 0)
     var hr60 = Number((w && w.dsps60) || 0)
-    if (hr5 > 0 || hr60 > 0) return 'alive'
+    var altHr = Number((w && (w.hashrate5m || w.hashrate1m || w.hashrate)) || 0)
+    if (hr5 > 0 || hr60 > 0 || altHr > 0) return 'alive'
 
     var lastShare = Number((w && w.lastshare) || 0)
     if (lastShare > 0) {
@@ -217,11 +218,13 @@
     // Sort: alive first, idle second, dead last, then by hashrate descending
     var statusOrder = { alive: 0, idle: 1, dead: 2 }
     allWorkers.sort(function (a, b) {
-      var sa = statusOrder[a.status] != null ? statusOrder[a.status] : 2
-      var sb = statusOrder[b.status] != null ? statusOrder[b.status] : 2
+      var saKey = workerStatus(a)
+      var sbKey = workerStatus(b)
+      var sa = statusOrder[saKey] != null ? statusOrder[saKey] : 2
+      var sb = statusOrder[sbKey] != null ? statusOrder[sbKey] : 2
       if (sa !== sb) return sa - sb
-      var hrA = dspsToHashrate(a.dsps5) || 0
-      var hrB = dspsToHashrate(b.dsps5) || 0
+      var hrA = dspsToHashrate(a.dsps5) || Number(a.hashrate5m || a.hashrate1m || a.hashrate || 0)
+      var hrB = dspsToHashrate(b.dsps5) || Number(b.hashrate5m || b.hashrate1m || b.hashrate || 0)
       return hrB - hrA
     })
 
@@ -249,8 +252,8 @@
         shortName = w._autoName || 'worker'
       }
 
-      var hr5m = formatHashrate(dspsToHashrate(w.dsps5))
-      var hr60 = formatHashrate(dspsToHashrate(w.dsps60))
+      var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
+      var hr60 = formatHashrate(dspsToHashrate(w.dsps60) || Number(w.hashrate60m || w.hashrate || 0))
       var bestDiff = formatDifficulty(w.bestdiff)
       var lastShare = timeAgo(w.lastshare)
       var status = workerStatus(w)
@@ -362,7 +365,7 @@
         shortName = w._autoName || 'worker'
       }
 
-      var hr5m = formatHashrate(dspsToHashrate(w.dsps5))
+      var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
       var bestDiff = formatDifficulty(w.bestdiff)
       var status = workerStatus(w)
       var statusLabel = status === 'alive' ? 'Yes' : 'No'
