@@ -9,7 +9,7 @@
     "@start9labs/start-sdk": "1.0.0",
     "bitcoin-cash-node-startos": "git+https://github.com/BitcoinCash1/bitcoin-cash-node-startos.git#master",
     "bitcoin-cash-daemon-startos": "git+https://github.com/BitcoinCash1/bitcoin-cash-daemon-startos.git#master",
-    "flowee-startos": "git+https://github.com/BitcoinCash1/flowee-startos.git#master"
+    "flowee-startos": "git+https://github.com/BitcoinCash1/flowee-the-hub-startos.git#master"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
