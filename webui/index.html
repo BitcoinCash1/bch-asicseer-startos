@@ -186,6 +186,28 @@
       </div>
     </div>
 
+    <!-- Login / Address Filter -->
+    <div class="card wide login-card">
+      <div class="card-header">
+        <h2>Login</h2>
+      </div>
+      <div class="card-body">
+        <div class="login-row">
+          <input type="text" id="login-address" class="login-input" placeholder="Address (bc1...)" autocomplete="off" spellcheck="false">
+          <button id="login-btn" class="login-btn">My Devices</button>
+        </div>
+        <p class="login-hint" id="login-hint">Enter your BCH payout address to view only your miners.</p>
+      </div>
+    </div>
+
+    <!-- Uptime (visible when logged in) -->
+    <div class="card wide" id="uptime-card" style="display:none">
+      <div class="card-body" style="text-align:center;padding:12px 20px">
+        <span class="label">Uptime</span>
+        <span class="value" id="user-uptime" style="margin-left:8px">—</span>
+      </div>
+    </div>
+
     <!-- Connection Guide -->
     <div class="card wide">
       <div class="card-header">
@@ -216,7 +238,33 @@
       </div>
     </div>
 
-    <!-- Workers Table -->
+    <!-- Online Devices (user-filtered, visible when logged in) -->
+    <div class="card wide" id="my-devices-card" style="display:none">
+      <div class="card-header">
+        <h2>Online Devices</h2>
+        <span class="badge pool" id="my-device-count-badge">0</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="workers-empty" id="my-devices-empty">
+          <p>No devices found for this address.</p>
+        </div>
+        <div class="workers-table-wrap" id="my-devices-table-wrap" style="display:none">
+          <table class="workers-table">
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th>Currently Working</th>
+                <th>Total Hash Rate</th>
+                <th>Best Difficulty</th>
+              </tr>
+            </thead>
+            <tbody id="my-devices-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workers Table (all pool workers) -->
     <div class="card wide">
       <div class="card-header">
         <h2>Workers</h2>
@@ -243,6 +291,23 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Donation Section (uncomment to enable) ──────────────────
+    <div class="card wide donation-card">
+      <div class="card-header">
+        <h2>Donate</h2>
+      </div>
+      <div class="card-body">
+        <p class="donation-text">Like the pool? Consider a donation.</p>
+        <div class="donation-addresses">
+          <div class="donation-item">
+            <div class="donation-qr" id="donate-bch-qr"></div>
+            <code class="donation-addr">bitcoincash:qr...</code>
+          </div>
+        </div>
+      </div>
+    </div>
+    ─────────────────────────────────────────────────────────────── -->
 
     <footer>
       <p>Powered by <a href="https://github.com/cculianu/asicseer-pool" target="_blank">ASICSeer Pool</a> · Stratum v1 · For StartOS</p>

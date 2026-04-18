@@ -438,3 +438,109 @@ footer a:hover {
     gap: 12px;
   }
 }
+
+/* ── Login / Address Filter ────────────────────────────────────── */
+.login-card {
+  margin-bottom: 16px;
+}
+
+.login-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.login-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-input:focus {
+  border-color: var(--accent);
+}
+
+.login-input::placeholder {
+  color: var(--text-muted);
+}
+
+.login-btn {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.login-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.login-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.login-hint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 8px;
+}
+
+/* ── Donation Section ──────────────────────────────────────────── */
+/*
+.donation-card {
+  margin-bottom: 16px;
+}
+
+.donation-text {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+
+.donation-addresses {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.donation-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.donation-qr {
+  width: 120px;
+  height: 120px;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donation-addr {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  word-break: break-all;
+  max-width: 160px;
+  text-align: center;
+}
+*/

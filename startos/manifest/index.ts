@@ -48,5 +48,11 @@ export const manifest = setupManifest({
       optional: true,
       s9pk: null,
     },
+    flowee: {
+      description:
+        'Flowee the Hub — Fast BCH validator. Good for relay, but uses SPV-level validation. Not recommended as sole mining node.',
+      optional: true,
+      s9pk: null,
+    },
   },
 })

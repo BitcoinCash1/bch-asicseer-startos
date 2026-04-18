@@ -3,6 +3,7 @@
   'use strict'
 
   var REFRESH_MS = 5000
+  var loggedInAddress = ''   // current address filter (empty = show all)
 
   function formatHashrate(hps) {
     if (hps == null || isNaN(hps)) return '—'
@@ -243,12 +244,125 @@
     }
 
     tbody.innerHTML = html
+
+    // Update my devices panel if logged in
+    updateMyDevices(allWorkers)
+  }
+    var d = document.createElement('div')
+    d.appendChild(document.createTextNode(s))
+    return d.innerHTML
   }
 
   function escapeHtml(s) {
     var d = document.createElement('div')
     d.appendChild(document.createTextNode(s))
     return d.innerHTML
+  }
+
+  // ── Login / Address Filter ────────────────────────────────────────
+  function setupLogin() {
+    var input = el('login-address')
+    var btn = el('login-btn')
+    var hint = el('login-hint')
+
+    function doLogin() {
+      var addr = (input.value || '').trim()
+      if (addr) {
+        loggedInAddress = addr
+        btn.textContent = 'Logout'
+        btn.classList.add('active')
+        hint.textContent = 'Showing devices for: ' + addr.substring(0, 16) + '...'
+        el('my-devices-card').style.display = ''
+        el('uptime-card').style.display = ''
+      } else {
+        doLogout()
+      }
+    }
+
+    function doLogout() {
+      loggedInAddress = ''
+      input.value = ''
+      btn.textContent = 'My Devices'
+      btn.classList.remove('active')
+      hint.textContent = 'Enter your BCH payout address to view only your miners.'
+      el('my-devices-card').style.display = 'none'
+      el('uptime-card').style.display = 'none'
+    }
+
+    btn.addEventListener('click', function () {
+      if (loggedInAddress) {
+        doLogout()
+      } else {
+        doLogin()
+      }
+    })
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') doLogin()
+    })
+  }
+
+  function updateMyDevices(allWorkers) {
+    if (!loggedInAddress) return
+
+    var myWorkers = allWorkers.filter(function (w) {
+      var name = w.worker || w.user || ''
+      // Match: exact address, or address.suffix
+      var addr = name.indexOf('.') > 0 ? name.substring(0, name.indexOf('.')) : name
+      return addr === loggedInAddress
+    })
+
+    var empty = el('my-devices-empty')
+    var wrap = el('my-devices-table-wrap')
+    var badge = el('my-device-count-badge')
+    var tbody = el('my-devices-tbody')
+
+    badge.textContent = myWorkers.length
+
+    if (myWorkers.length === 0) {
+      empty.style.display = ''
+      wrap.style.display = 'none'
+      return
+    }
+
+    empty.style.display = 'none'
+    wrap.style.display = ''
+
+    var html = ''
+    for (var i = 0; i < myWorkers.length; i++) {
+      var w = myWorkers[i]
+      var name = w.worker || w.user || '—'
+      var shortName
+      var dotIdx = name.indexOf('.')
+      if (dotIdx > 0 && dotIdx < name.length - 1) {
+        shortName = name.substring(dotIdx + 1)
+      } else {
+        shortName = w._autoName || 'worker'
+      }
+
+      var hr5m = formatHashrate(dspsToHashrate(w.dsps5))
+      var bestDiff = formatDifficulty(w.bestdiff)
+      var status = w.status || (w.idle ? 'dead' : 'alive')
+      var statusLabel = status === 'alive' ? 'Yes' : 'No'
+
+      html += '<tr>'
+      html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span></td>'
+      html += '<td><span class="status-dot ' + status + '"></span>' + statusLabel + '</td>'
+      html += '<td>' + hr5m + '</td>'
+      html += '<td>' + bestDiff + '</td>'
+      html += '</tr>'
+    }
+
+    tbody.innerHTML = html
+
+    // Update uptime from first worker's runtime (approximation from pool stats)
+    var uptimeEl = el('user-uptime')
+    if (myWorkers.length > 0 && myWorkers[0].lastshare > 0) {
+      var diff = Math.floor(Date.now() / 1000) - myWorkers[0].lastshare
+      uptimeEl.textContent = diff < 300 ? 'Online' : timeAgo(myWorkers[0].lastshare)
+    } else {
+      uptimeEl.textContent = '—'
+    }
   }
 
   function fetchStats(url) {
@@ -311,4 +425,5 @@
 
   tick()
   setInterval(tick, REFRESH_MS)
+  setupLogin()
 })()

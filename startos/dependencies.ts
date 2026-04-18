@@ -1,5 +1,6 @@
 import { autoconfig as bchnAutoconfig } from 'bitcoin-cash-node-startos/startos/actions/config/autoconfig'
 import { autoconfig as bchdAutoconfig } from 'bitcoin-cash-daemon-startos/startos/actions/config/autoconfig'
+import { autoconfig as floweeAutoconfig } from 'flowee-startos/startos/actions/config/autoconfig'
 import { sdk } from './sdk'
 import { storeJson } from './file-models/store.json'
 
@@ -12,8 +13,10 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     effects,
     'bitcoincashd:autoconfig',
     'bchd:autoconfig',
+    'flowee:autoconfig',
     'bitcoincashd-autoconfig',
     'bchd-autoconfig',
+    'flowee-autoconfig',
   )
 
   if (store?.nodeConfirmed) {
@@ -28,6 +31,19 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
         },
         reason:
           'Pruning must be disabled for mining pool operation.',
+        when: { condition: 'input-not-matches', once: false },
+      })
+    } else if (nodePackageId === 'flowee') {
+      // Flowee: ensure REST API is on
+      await sdk.action.createTask(effects, 'flowee', floweeAutoconfig, 'critical', {
+        input: {
+          kind: 'partial',
+          value: {
+            rest: true,
+          },
+        },
+        reason:
+          'REST API must be enabled for mining pool operation.',
         when: { condition: 'input-not-matches', once: false },
       })
     } else {
@@ -52,6 +68,12 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     deps['bchd'] = {
       kind: 'running',
       versionRange: '>=0.21.1:0',
+      healthChecks: ['primary'],
+    }
+  } else if (nodePackageId === 'flowee') {
+    deps['flowee'] = {
+      kind: 'running',
+      versionRange: '>=1.0.0:0',
       healthChecks: ['primary'],
     }
   } else {
