@@ -3,10 +3,10 @@ FROM ubuntu:22.04 AS build-asicseer
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    build-essential cmake libzmq3-dev && \
+    build-essential cmake libzmq3-dev git ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-COPY asicseer-src /build/asicseer
+RUN git clone --depth 1 https://github.com/cculianu/asicseer-pool.git /build/asicseer
 WORKDIR /build/asicseer
 RUN mkdir out && cd out && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
