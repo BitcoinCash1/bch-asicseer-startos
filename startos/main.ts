@@ -52,23 +52,83 @@ export const main = sdk.setupMain(async ({ effects }) => {
   )
 
   // ── Read node RPC credentials from mounted dependency ────────────
+  const maxStoreReadAttempts = 15
   let rpcUser = nodePackageId
   let rpcPassword = ''
-  try {
-    const result = await poolSub.exec([
-      'cat',
-      `${nodeMountpoint}/store.json`,
-    ])
-    if (result.exitCode === 0) {
-      const nodeStore = JSON.parse(result.stdout.toString()) as {
-        rpcUser?: string
-        rpcPassword?: string
+  let storeReadOk = false
+  for (let attempt = 1; attempt <= maxStoreReadAttempts; attempt++) {
+    try {
+      const result = await poolSub.exec([
+        'cat',
+        `${nodeMountpoint}/store.json`,
+      ])
+      if (result.exitCode === 0) {
+        const nodeStore = JSON.parse(result.stdout.toString()) as {
+          rpcUser?: string
+          rpcPassword?: string
+        }
+        rpcUser = nodeStore.rpcUser ?? rpcUser
+        rpcPassword = nodeStore.rpcPassword ?? rpcPassword
+        storeReadOk = true
+        break
       }
-      rpcUser = nodeStore.rpcUser ?? rpcUser
-      rpcPassword = nodeStore.rpcPassword ?? rpcPassword
+    } catch {
+      // Retry below.
     }
-  } catch {
-    console.warn('Could not read node store.json — using defaults')
+
+    console.warn(
+      `Could not read ${nodeMountpoint}/store.json yet (attempt ${attempt}/${maxStoreReadAttempts})`,
+    )
+    await poolSub.exec(['sleep', '2'])
+  }
+
+  if (!storeReadOk) {
+    throw new Error(
+      `Dependency store.json was not readable at ${nodeMountpoint}/store.json`,
+    )
+  }
+
+  if (!rpcPassword) {
+    console.warn('Node RPC password is empty in dependency store.json')
+  }
+
+  const rpcProbeArgs = [
+    'curl',
+    '-sf',
+    '--max-time',
+    '3',
+    '-u',
+    `${rpcUser}:${rpcPassword}`,
+    '-H',
+    'Content-Type: application/json',
+    '-d',
+    '{"jsonrpc":"1.0","id":"startos","method":"getblockchaininfo","params":[]}',
+    `http://${nodeHost}:8332`,
+  ]
+
+  const maxRpcProbeAttempts = 30
+  let rpcReady = false
+  for (let attempt = 1; attempt <= maxRpcProbeAttempts; attempt++) {
+    try {
+      const result = await poolSub.exec(rpcProbeArgs)
+      if (result.exitCode === 0) {
+        rpcReady = true
+        break
+      }
+    } catch {
+      // Retry below.
+    }
+
+    console.warn(
+      `Node RPC not ready at ${nodeHost}:8332 (attempt ${attempt}/${maxRpcProbeAttempts})`,
+    )
+    await poolSub.exec(['sleep', '2'])
+  }
+
+  if (!rpcReady) {
+    throw new Error(
+      `Node RPC at ${nodeHost}:8332 did not become ready in time`,
+    )
   }
 
   await storeJson.merge(effects, {

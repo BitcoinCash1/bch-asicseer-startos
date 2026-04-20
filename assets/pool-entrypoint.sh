@@ -9,6 +9,13 @@
 MODE="${1:-pool}"                     # "pool" or "solo"
 CONF="${2}"                           # e.g. /data/pool/asicseer.conf
 
+log() {
+  printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
+}
+
+RPC_TARGET=$(jq -r '.btcd[0].url // empty' "$CONF" 2>/dev/null)
+RPC_USER=$(jq -r '.btcd[0].auth // empty' "$CONF" 2>/dev/null)
+
 # Clean stale socket directory from previous runs
 rm -rf "/tmp/${MODE}" 2>/dev/null
 
@@ -20,10 +27,13 @@ else
   CMD="asicseer -c $CONF -n $MODE"
 fi
 
+log "starting asicseer mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknown} rpc_user=${RPC_USER:-unknown}"
+
 # Restart loop — if asicseer crashes (e.g. RPC not ready), retry after delay
 MAX_RETRIES=10
 RETRY=0
 while true; do
+  log "launch attempt $((RETRY + 1))/${MAX_RETRIES} mode=${MODE}"
   $CMD &
   PID=$!
 
@@ -41,8 +51,9 @@ while true; do
     exit 1
   fi
 
-  echo "asicseer ($MODE) exited with code $EXIT_CODE, restarting in 5s (attempt $RETRY/$MAX_RETRIES)"
+  log "asicseer (${MODE}) exited with code ${EXIT_CODE}, restarting in 5s (attempt ${RETRY}/${MAX_RETRIES})"
   # Clean stale sockets before retry
   rm -rf "/tmp/${MODE}" 2>/dev/null
+  log "cleaned stale socket dir /tmp/${MODE}"
   sleep 5
 done

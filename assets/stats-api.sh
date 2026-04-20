@@ -45,20 +45,26 @@ read_pool_stats() {
   STATUS="/data/${1}/log/pool/pool.status"
   if [ -s "$STATUS" ]; then
     jq -s "$JQ_DEFS"'add | {
-      hashrate5m:  ((.hashrate5m  // "0") | hr2n),
-      hashrate1m:  ((.hashrate1m  // "0") | hr2n),
-      hashrate1hr: ((.hashrate1hr // "0") | hr2n),
-      hashrate1d:  ((.hashrate1d  // "0") | hr2n),
-      hashrate7d:  ((.hashrate7d  // "0") | hr2n),
-      workers:     (.Workers // 0),
-      users:       (.Users // 0),
+      hashrate5m:  ((.hashrate5m  // .Hashrate5m  // "0") | hr2n),
+      hashrate1m:  ((.hashrate1m  // .Hashrate1m  // "0") | hr2n),
+      hashrate1hr: ((.hashrate1hr // .Hashrate1hr // "0") | hr2n),
+      hashrate1d:  ((.hashrate1d  // .Hashrate1d  // "0") | hr2n),
+      hashrate7d:  ((.hashrate7d  // .Hashrate7d  // "0") | hr2n),
+      workers:     (.Workers // .workers // 0),
+      users:       (.Users // .users // 0),
       accepted:    (.accepted // 0),
       rejected:    (.rejected // 0),
       bestshare:   (.bestshare // 0),
-      runtime:     (.runtime // 0)
+      runtime:     (.runtime // 0),
+      status:      "ok",
+      status_message: "Pool stats active"
     }' "$STATUS" 2>/dev/null || echo '{}'
   else
-    echo '{}'
+    if [ -d "/data/${1}/log/pool" ]; then
+      echo '{"hashrate5m":0,"hashrate1m":0,"hashrate1hr":0,"hashrate1d":0,"hashrate7d":0,"workers":0,"users":0,"accepted":0,"rejected":0,"bestshare":0,"runtime":0,"status":"waiting_for_miners","status_message":"Waiting for first miner stats"}'
+    else
+      echo '{"hashrate5m":0,"hashrate1m":0,"hashrate1hr":0,"hashrate1d":0,"hashrate7d":0,"workers":0,"users":0,"accepted":0,"rejected":0,"bestshare":0,"runtime":0,"status":"initializing","status_message":"Pool status file not created yet"}'
+    fi
   fi
 }
 
@@ -66,9 +72,19 @@ read_pool_stats() {
 read_users_data() {
   STATUS="/data/${1}/log/pool/pool.status"
   if [ -s "$STATUS" ]; then
-    jq -s 'add | {connectedclients: (.Workers // 0)}' "$STATUS" 2>/dev/null || echo '{}'
+    POOL_WORKERS=$(jq -sr 'add | (.Workers // .workers // 0)' "$STATUS" 2>/dev/null || echo 0)
+    if [ -n "$POOL_WORKERS" ] && [ "$POOL_WORKERS" -gt 0 ] 2>/dev/null; then
+      printf '%s' "{\"connectedclients\":${POOL_WORKERS}}"
+    else
+      UDIR="/data/${1}/log/users"
+      FALLBACK=0
+      if [ -d "$UDIR" ] && ls "$UDIR"/* >/dev/null 2>&1; then
+        FALLBACK=$(jq -cs '[ .[] | ((.worker // .workers // []) | length) ] | add // 0' "$UDIR"/* 2>/dev/null || echo 0)
+      fi
+      printf '%s' "{\"connectedclients\":${FALLBACK}}"
+    fi
   else
-    echo '{}'
+    echo '{"connectedclients":0}'
   fi
 }
 
@@ -84,25 +100,15 @@ read_workers_data() {
       [ -f "$FILE" ] || continue
 
       PARSED=$(jq -c --argjson now "$NOW" "$JQ_DEFS"'
-        [(.worker // [])[] |
-          (((.hashrate5m  // "0") | hr2n) as $hr5 |
-          ((.hashrate1hr // "0") | hr2n) as $hr1h |
-          ((.hashrate1d  // "0") | hr2n) as $hr1d |
-          ((.hashrate7d  // "0") | hr2n) as $hr7d |
+        [((.worker // .workers // []))[] |
           ((.lastshare // 0) as $ls |
-          (if ($hr5 > 0 or $hr1h > 0) then "alive"
-           elif ($hr1d > 0 or $hr7d > 0) then "idle"
-           elif ($ls <= 0 or ($now - $ls) > 86400) then "dead"
-           elif ($now - $ls) > 3600 then "idle"
+          (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
+           elif ($now - $ls) > 300 then "idle"
            else "alive" end) as $status |
           {
             worker:    .workername,
-            dsps5:     ($hr5 / 4294967296),
-            dsps60:    ($hr1h / 4294967296),
-            hashrate5m: $hr5,
-            hashrate1hr: $hr1h,
-            hashrate1d: $hr1d,
-            hashrate7d: $hr7d,
+            dsps5:     (((.hashrate5m  // "0") | hr2n) / 4294967296),
+            dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
             bestdiff:  (.bestshare // 0),
             lastshare: (.lastshare // 0),
             idle:      ($status != "alive"),
@@ -148,11 +154,13 @@ while true; do
   MINING_INFO=$(rpc_call getmininginfo || echo '{}')
   NET_INFO=$(rpc_call getnetworkinfo || echo '{}')
   MEMPOOL_INFO=$(rpc_call getmempoolinfo || echo '{}')
+  RPC_STATUS="ok"
 
   [ -z "$CHAIN_INFO" ] && CHAIN_INFO='{}'
   [ -z "$MINING_INFO" ] && MINING_INFO='{}'
   [ -z "$NET_INFO" ] && NET_INFO='{}'
   [ -z "$MEMPOOL_INFO" ] && MEMPOOL_INFO='{}'
+  [ "$CHAIN_INFO" = '{}' ] && RPC_STATUS='unavailable'
 
   # ── Write JSON files atomically ──────────────────────────────────
   printf '%s' "{\"stats\":${POOL_STATS},\"users\":${POOL_USERS},\"workers\":${POOL_WORKERS}}" \
@@ -163,6 +171,9 @@ while true; do
 
   printf '%s' "{\"blockchain\":${CHAIN_INFO},\"mining\":${MINING_INFO},\"network\":${NET_INFO},\"mempool\":${MEMPOOL_INFO}}" \
     > "${API_DIR}/node-stats.json.tmp" && mv "${API_DIR}/node-stats.json.tmp" "${API_DIR}/node-stats.json"
+
+  printf '%s' "{\"pool\":${POOL_STATS},\"solo\":${SOLO_STATS},\"node_rpc\":\"${RPC_STATUS}\"}" \
+    > "${API_DIR}/service-status.json.tmp" && mv "${API_DIR}/service-status.json.tmp" "${API_DIR}/service-status.json"
 
   sleep 5
 done
