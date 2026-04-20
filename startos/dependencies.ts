@@ -6,7 +6,10 @@ import { storeJson } from './file-models/store.json'
 
 export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   const store = await storeJson.read().const(effects)
-  const nodePackageId = store?.nodePackageId ?? 'bitcoincashd'
+  const selectedNodePackageId = store?.nodePackageId ?? 'bitcoincashd'
+  const nodePackageId = ['bitcoincashd', 'bchd', 'flowee'].includes(selectedNodePackageId)
+    ? selectedNodePackageId
+    : 'bitcoincashd'
 
   // Purge stale tasks from previous node selections
   await sdk.action.clearTask(
@@ -17,6 +20,8 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     'bitcoincashd-autoconfig',
     'bchd-autoconfig',
     'flowee-autoconfig',
+    'select-node',
+    'bitcoincash:autoconfig',
   )
 
   if (store?.nodeConfirmed) {
