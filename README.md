@@ -90,7 +90,7 @@ The onion keys survive StartOS reboots and are preserved by the standard StartOS
 
 ### Dashboard Metrics — What the Numbers Mean
 
-- **Accepted** — cumulative *difficulty-weighted* share work that the pool accepted from this worker, in SI units. `176.00 M` means 176,000,000 diff-1 work units (not 176 million submissions, and not 176 million blocks). asicseer-pool always reports accepted work this way; a single Bitaxe will reach hundreds of millions over a few days. Higher is better.
+- **Accepted Difficulty** — cumulative sum of each accepted share's difficulty
 - **Rejected** — shares the pool rejected (stale, invalid, or below assigned difficulty). Should stay near zero.
 - **Best Share** — highest individual share difficulty ever accepted for this worker. When this approaches the network difficulty (~355 EH at current BCH diff) a block is about to be found.
 - **Found Blocks** (main card) — counted by listing files in `/data/pool/log/pool/blocks/`. asicseer-pool writes exactly one file per solved block, so this is a true integer count, not derived from share work.
