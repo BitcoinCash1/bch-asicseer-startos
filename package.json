@@ -6,10 +6,10 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "1.0.0",
-    "bitcoin-cash-node-startos": "git+https://github.com/BitcoinCash1/bitcoin-cash-node-startos.git#master",
-    "bitcoin-cash-daemon-startos": "git+https://github.com/BitcoinCash1/bitcoin-cash-daemon-startos.git#master",
-    "flowee-startos": "git+https://github.com/BitcoinCash1/flowee-the-hub-startos.git#master"
+    "@start9labs/start-sdk": "^1.2.1",
+    "bitcoin-cash-node-startos": "file:../bitcoin-cash-node-startos",
+    "bitcoin-cash-daemon-startos": "file:../bitcoin-cash-daemon-startos",
+    "flowee-startos": "file:../flowee-startos"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
