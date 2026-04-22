@@ -29,6 +29,26 @@ fi
 
 log "starting asicseer mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknown} rpc_user=${RPC_USER:-unknown}"
 
+# Background loop: every 10s, query asicseer-pool's live client table via
+# ckpmsg and write it to the shared /data volume so the UI subcontainer can
+# derive a real per-worker submission count
+# (accepted_count = shares / current_diff). asicseer-pool stores only a
+# diff-weighted sum per-worker on disk; the per-client current vardiff
+# (`client->diff`) is only reachable over the Unix socket, so we stage it.
+(
+  while : ; do
+    sleep 10
+    [ -S "/tmp/${MODE}/listener" ] || continue
+    OUT=$(printf 'clients\n' | ckpmsg -s /tmp -n "${MODE}" 2>/dev/null \
+            | sed -n 's/.*Received response: //p' | head -1)
+    if [ -n "$OUT" ]; then
+      mkdir -p "/data/${MODE}/log" 2>/dev/null
+      printf '%s' "$OUT" > "/data/${MODE}/log/.clients.tmp" \
+        && mv "/data/${MODE}/log/.clients.tmp" "/data/${MODE}/log/clients.json"
+    fi
+  done
+) &
+
 # Restart loop — if asicseer crashes (e.g. RPC not ready), retry after delay
 MAX_RETRIES=10
 RETRY=0

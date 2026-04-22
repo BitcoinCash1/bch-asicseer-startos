@@ -155,8 +155,9 @@
                 <th>Worker</th>
                 <th>Hashrate (5m)</th>
                 <th>Hashrate (1h)</th>
-                <th title="Accepted share WORK, shown as a diff-1–weighted sum (Σ of each accepted share's difficulty). This is the only accepted-share metric asicseer-pool exposes per-worker — it does NOT store a raw submission count. If you need the integer submission count your ASIC reports (e.g. Avalon cgminer 'Accepted: 6'), read it from the miner's own web UI / cgminer API on port 4028.">Shares (Σdiff)</th>
-                <th title="Current share difficulty (vardiff) the pool assigns to this worker. Distinct from share work and from network difficulty.">Share Diff</th>
+                <th title="Accepted share submissions — an integer count equivalent to what your ASIC's cgminer API reports as 'Accepted'. Derived as floor(Σdiff / current_vardiff). The current vardiff is read live from asicseer-pool's control socket.">Accepted</th>
+                <th title="Rejected shares. NOTE: asicseer-pool's per-worker log does not carry rejection telemetry — rejects are accounted pool-wide only. This column reflects whatever the per-user file exposes (usually 0).">Rejected</th>
+                <th title="Same shares, viewed as diff-1 weighted WORK (Σ of each accepted share's difficulty). Useful for comparing workers across different vardiff targets.">Shares (Σdiff)</th>
                 <th title="Highest individual share difficulty ever submitted by this worker. When this approaches network difficulty, a block is about to be found.">Best Share</th>
                 <th title="Timestamp of the worker's most recent accepted share (pool-side, authoritative).">Last Share</th>
                 <th title="Status derived from Last Share age (pool-side source of truth): <5 min Alive, <1 h Idle, otherwise Dead.">Status</th>
@@ -184,8 +185,9 @@
                 <th>Worker</th>
                 <th>Online</th>
                 <th>Hashrate (5m)</th>
-                <th title="Accepted share WORK (Σ diff-1 units). asicseer-pool does not store a raw per-worker submission count; see Online Devices tooltip.">Shares (Σdiff)</th>
-                <th title="Current share difficulty (vardiff) the pool assigns to this worker.">Share Diff</th>
+                <th title="Accepted share submissions — integer count, matches cgminer-API Accepted.">Accepted</th>
+                <th title="Rejected shares (pool-side; usually 0 per-worker).">Rejected</th>
+                <th title="Same shares as Σ diff-1 weighted work.">Shares (Σdiff)</th>
                 <th title="Highest individual share difficulty ever submitted.">Best Share</th>
               </tr>
             </thead>

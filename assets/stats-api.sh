@@ -91,30 +91,59 @@ read_users_data() {
 # ── Read workers from per-user log files ──
 # Each user file has a "worker" array with per-worker stats.
 # WebUI expects: {workers: [{worker, dsps5, dsps60, bestdiff, lastshare, idle}]}
+#
+# We also merge in per-worker current vardiff (client->diff) from
+# /data/{mode}/log/clients.json (written by pool-entrypoint.sh via ckpmsg).
+# That lets us derive a real integer accepted-share count from the
+# diff-weighted `shares` sum that ckpool stores on disk:
+#     accepted_count = round(shares / current_diff)
+# which is the number an ASIC's own cgminer API reports as `Accepted`.
 read_workers_data() {
   UDIR="/data/${1}/log/users"
+  CLIENTS="/data/${1}/log/clients.json"
   NOW=$(date +%s)
+
+  # Build a jq map { "<workername>": avg_diff } from clients.json if present.
+  DIFF_MAP='{}'
+  if [ -s "$CLIENTS" ]; then
+    DIFF_MAP=$(jq -c '
+      ((.clients // [])
+       | map(select(.workername != null and .workername != "" and (.diff // 0) > 0))
+       | group_by(.workername)
+       | map({key: .[0].workername,
+              value: ((map(.diff) | add) / length)})
+       | from_entries) // {}
+    ' "$CLIENTS" 2>/dev/null) || DIFF_MAP='{}'
+    [ -z "$DIFF_MAP" ] && DIFF_MAP='{}'
+  fi
+
   if [ -d "$UDIR" ] && ls "$UDIR"/* >/dev/null 2>&1; then
     WORKERS='[]'
     for FILE in "$UDIR"/*; do
       [ -f "$FILE" ] || continue
 
-      PARSED=$(jq -c --argjson now "$NOW" "$JQ_DEFS"'
+      PARSED=$(jq -c --argjson now "$NOW" --argjson diffmap "$DIFF_MAP" "$JQ_DEFS"'
         [((.worker // .workers // []))[] |
           ((.lastshare // 0) as $ls |
+          (.workername // "") as $wn |
+          (($diffmap[$wn]) // 0) as $cdiff |
+          ((.shares // .accepted // 0) | tonumber? // 0) as $sacc |
+          (if $cdiff > 0 then (($sacc / $cdiff) | floor) else 0 end) as $acount |
           (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
            elif ($now - $ls) > 300 then "idle"
            else "alive" end) as $status |
           {
-            worker:    .workername,
-            dsps5:     (((.hashrate5m  // "0") | hr2n) / 4294967296),
-            dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
-            accepted:  (.accepted // .shares // .valid // 0),
-            rejected:  (.rejected // .stale // .invalid // 0),
-            bestdiff:  (.bestshare // 0),
-            lastshare: (.lastshare // 0),
-            idle:      ($status != "alive"),
-            status:    $status
+            worker:         $wn,
+            dsps5:          (((.hashrate5m  // "0") | hr2n) / 4294967296),
+            dsps60:         (((.hashrate1hr // "0") | hr2n) / 4294967296),
+            accepted:       $sacc,
+            accepted_count: $acount,
+            rejected:       (.rejected // .stale // .invalid // 0),
+            current_diff:   $cdiff,
+            bestdiff:       (.bestshare // 0),
+            lastshare:      $ls,
+            idle:           ($status != "alive"),
+            status:         $status
           })]
       ' "$FILE" 2>/dev/null) || continue
 
