@@ -73,6 +73,28 @@
 | **Username** | Your BCH address |
 | **Password** | Anything (or `d=DIFFICULTY` for custom difficulty) |
 
+### Tor / Onion Mining (optional)
+
+Every stratum binding can be exposed over **Tor** so remote miners connect over the Tor network without touching your LAN.
+
+1. Open StartOS → **ASICSeer** → **Interfaces**.
+2. For `Pool Mining`, `Solo Mining`, or `Web Dashboard`: tap **Add**, choose **Tor**.
+3. StartOS generates a `.onion` address automatically. Point your Tor-aware miner at:
+   ```
+   stratum+tcp://<xxxx>.onion:3334   # pool
+   stratum+tcp://<xxxx>.onion:4568   # solo
+   ```
+4. Re-run `setup-vm-forwarding.sh` — it will auto-detect the enabled `.onion` URLs and print/save them alongside your LAN URLs.
+
+The onion keys survive StartOS reboots and are preserved by the standard StartOS backup system.
+
+### Dashboard Metrics — What the Numbers Mean
+
+- **Accepted** — cumulative *difficulty-weighted* share work that the pool accepted from this worker, in SI units. `176.00 M` means 176,000,000 diff-1 work units (not 176 million submissions, and not 176 million blocks). asicseer-pool always reports accepted work this way; a single Bitaxe will reach hundreds of millions over a few days. Higher is better.
+- **Rejected** — shares the pool rejected (stale, invalid, or below assigned difficulty). Should stay near zero.
+- **Best Share** — highest individual share difficulty ever accepted for this worker. When this approaches the network difficulty (~355 EH at current BCH diff) a block is about to be found.
+- **Found Blocks** (main card) — counted by listing files in `/data/pool/log/pool/blocks/`. asicseer-pool writes exactly one file per solved block, so this is a true integer count, not derived from share work.
+
 ## Running StartOS in a Virtual Machine
 
 If you run StartOS inside a **libvirt/KVM virtual machine** (e.g. via `virt-manager`), miners on your local network cannot reach the VM directly because libvirt uses a NAT bridge (`virbr0`). You need to forward the mining ports from your host machine to the VM.
@@ -96,6 +118,9 @@ That's it. The script will:
 3. Install a [libvirt qemu hook](https://wiki.libvirt.org/Networking.html#forwarding-incoming-connections) that automatically forwards ports whenever the VM starts
 4. Detect **all** your physical network interfaces (wired + wireless) and forward on each
 5. Print the exact stratum URLs to use for your miners
+6. Best-effort: detect any `.onion` addresses you have enabled for the pool and print those too (see [Tor / Onion Mining](#tor--onion-mining-optional))
+
+The rules **persist across host reboots automatically** — the hook is invoked by libvirt every time the VM starts, so there is no cron job or systemd unit to maintain.
 
 ```
 $ sudo ./setup-vm-forwarding.sh

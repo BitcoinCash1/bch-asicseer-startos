@@ -332,7 +332,66 @@ if [[ $IFACE_COUNT -gt 1 ]]; then
     done
 fi
 
-FULL_INFO="${MINER_INFO}${MINER_INFO_EXTRA}"
+# ── Best-effort: fetch StartOS Tor (.onion) addresses for the pool services ─
+# If the user has `start-cli` installed AND an active auth cookie, we can pull
+# the currently enabled .onion addresses for bch-elopool / bch-asicseer and
+# print them so Tor-using miners can connect privately.
+#
+# Users must first enable a Tor address for each binding inside the StartOS UI
+# (Service → Interfaces → add .onion). If none are enabled, we print a hint
+# explaining where to enable them.
+
+# Resolve real (non-root) user early so start-cli can read their cookie file
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(eval echo "~$REAL_USER" 2>/dev/null || echo "$HOME")
+
+TOR_INFO=""
+fetch_tor_addrs() {
+    local cookie="${REAL_HOME}/.startos/.cookies.json"
+    command -v start-cli &>/dev/null || return 0
+    [[ -f "$cookie" ]] || return 0
+
+    local db_json
+    db_json=$(sudo -u "$REAL_USER" start-cli -H "http://${GUEST_IP}" \
+        --cookie-path "$cookie" db dump --format json 2>/dev/null) || return 0
+    [[ -n "$db_json" ]] || return 0
+
+    command -v jq &>/dev/null || return 0
+
+    local onion_lines
+    onion_lines=$(printf '%s' "$db_json" | jq -r '
+        .value.packageData
+        | to_entries[]
+        | select(.key == "bch-elopool" or .key == "bch-asicseer")
+        | .key as $pkg
+        | (.value.hosts // {})
+        | to_entries[]
+        | .key as $svc
+        | (.value.bindings // {})
+        | to_entries[]
+        | .key as $port
+        | ( ((.value.addresses.enabled // [])[])
+            | if type == "string" then .
+              elif type == "object" then "\(.hostname):\(.port)"
+              else empty end )
+        | select(test("\\.onion:"))
+        | "\($pkg)\t\($svc)\t\($port)\tstratum+tcp://\(.)"
+    ' 2>/dev/null)
+
+    if [[ -n "$onion_lines" ]]; then
+        TOR_INFO=$'\n\n  ┌─ Tor (.onion) Stratum URLs ──────────────────┐\n'
+        while IFS=$'\t' read -r pkg svc port url; do
+            [[ -z "$pkg" ]] && continue
+            TOR_INFO="${TOR_INFO}  │  ${pkg} ${svc} :${port}\n  │    ${url}\n"
+        done <<< "$onion_lines"
+        TOR_INFO="${TOR_INFO}  └──────────────────────────────────────────────┘"
+    else
+        TOR_INFO=$'\n\n  ┌─ Tor (.onion) Not Configured ─────────────────┐\n  │                                               │\n  │  To enable Tor-private mining, in StartOS UI: │\n  │    Service → Interfaces → Pool/Solo Mining  │\n  │    Tap \"Add\" → select \"Tor\"                 │\n  │  Re-run this script to print the .onion URL. │\n  │                                               │\n  └───────────────────────────────────────────────┘'
+    fi
+}
+fetch_tor_addrs || true
+
+FULL_INFO="${MINER_INFO}${MINER_INFO_EXTRA}${TOR_INFO}"
 
 # ── Print to terminal ────────────────────────────────────────────────────────
 echo ""
@@ -345,14 +404,17 @@ echo "  VM IP:  $GUEST_IP (internal, don't use this in miners)"
 echo ""
 echo "$FULL_INFO"
 echo ""
+echo "  Persistence: rules live in the libvirt qemu hook at:"
+echo "    $HOOK_PATH"
+echo "  They are re-applied automatically every time the VM starts,"
+echo "  including after host reboots. No cron job or systemd unit needed."
+echo ""
 echo "  To check status:  sudo $0 --status"
 echo "  To uninstall:     sudo $0 --remove"
 echo ""
 
 # ── Save to Desktop ──────────────────────────────────────────────────────────
-# Find the real user (not root) who ran sudo
-REAL_USER="${SUDO_USER:-$USER}"
-REAL_HOME=$(eval echo "~$REAL_USER" 2>/dev/null || echo "$HOME")
+# REAL_USER / REAL_HOME were resolved earlier (before the Tor lookup).
 
 # Try XDG desktop, then ~/Desktop, then home
 DESKTOP_DIR=$(sudo -u "$REAL_USER" xdg-user-dir DESKTOP 2>/dev/null || true)

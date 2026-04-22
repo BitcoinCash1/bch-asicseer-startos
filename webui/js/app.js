@@ -76,6 +76,21 @@
     return Number(n).toLocaleString()
   }
 
+  // Format diff-1-weighted share work with an SI suffix (e.g. 176,000,000 -> "176.00 M").
+  // ckpool / asicseer-pool report "shares" as a cumulative sum of submitted
+  // difficulty — NOT a raw count of submissions — so showing the raw integer
+  // (which can easily reach hundreds of millions) is misleading to miners.
+  function formatWork(n) {
+    if (n == null || isNaN(n) || Number(n) <= 0) return '0'
+    var v = Number(n)
+    if (v >= 1e15) return (v / 1e15).toFixed(2) + ' P'
+    if (v >= 1e12) return (v / 1e12).toFixed(2) + ' T'
+    if (v >= 1e9)  return (v / 1e9 ).toFixed(2) + ' G'
+    if (v >= 1e6)  return (v / 1e6 ).toFixed(2) + ' M'
+    if (v >= 1e3)  return (v / 1e3 ).toFixed(2) + ' K'
+    return v.toFixed(0)
+  }
+
   function workerCounter(w, key) {
     var direct = Number(w && w[key])
     if (!isNaN(direct)) return direct
@@ -180,9 +195,13 @@
       stats.hashrate5m || stats.hashrate1m || stats.hashrate
     )
     el(prefix + '-workers').textContent = formatNumber(connected)
-    el(prefix + '-blocks').textContent = formatNumber(
-      stats.SolvedBlocks || stats.accepted || 0
-    )
+    // FIX: don't fall back to stats.accepted here — that field is cumulative
+    // diff-1 share WORK (hundreds of millions), not a block count. Using it as
+    // a fallback when SolvedBlocks=0 makes "Found Blocks" show garbage numbers.
+    var solvedBlocks = (stats.SolvedBlocks != null && !isNaN(stats.SolvedBlocks))
+      ? Number(stats.SolvedBlocks)
+      : 0
+    el(prefix + '-blocks').textContent = formatNumber(solvedBlocks)
     el(prefix + '-bestshare').textContent = formatNumber(
       stats.bestshare || stats.best_share || 0
     )
@@ -370,7 +389,7 @@
       html += '<span class="worker-mode ' + modeClass + '">' + w._mode + '</span></td>'
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + hr60 + '</td>'
-      html += '<td>' + formatNumber(accepted) + '</td>'
+      html += '<td>' + formatWork(accepted) + '</td>'
       html += '<td>' + formatNumber(rejected) + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '<td>' + lastShare + '</td>'
@@ -483,7 +502,7 @@
       html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span></td>'
       html += '<td><span class="status-dot ' + status + '"></span>' + statusLabel + '</td>'
       html += '<td>' + hr5m + '</td>'
-      html += '<td>' + formatNumber(accepted) + '</td>'
+      html += '<td>' + formatWork(accepted) + '</td>'
       html += '<td>' + formatNumber(rejected) + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '</tr>'
