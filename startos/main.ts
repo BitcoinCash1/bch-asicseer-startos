@@ -20,10 +20,15 @@ export const main = sdk.setupMain(async ({ effects }) => {
     nodeAddressMode === 'custom' && customNodeHost.length > 0
       ? customNodeHost
       : defaultNodeHost
+  // BCHD serves RPC over native TLS (self-signed cert). ckpool-lineage has no
+  // TLS library, so BCHD exposes a stunnel plaintext proxy on port 8334 that
+  // forwards to its TLS RPC on 8332 internally. Use 8334 automatically when
+  // the selected node is bchd; everything else speaks plaintext on 8332.
+  const defaultRpcPort = nodePackageId === 'bchd' ? 8334 : 8332
   const nodePort =
-    Number.isFinite(customNodePort) && customNodePort > 0
+    nodeAddressMode === 'custom' && Number.isFinite(customNodePort) && customNodePort > 0
       ? customNodePort
-      : 8332
+      : defaultRpcPort
 
   const torMode = store?.torMode ?? 'off'
   const torProxyHost = (store?.torProxyHost ?? 'tor.startos').trim() || 'tor.startos'
