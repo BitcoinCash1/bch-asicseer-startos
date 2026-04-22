@@ -148,16 +148,24 @@
 
   function el(id) { return document.getElementById(id) }
 
-  function updateCard(prefix, data) {
+  function getConnectedCount(data) {
     var stats = (data && data.stats) || {}
     var users = (data && data.users) || {}
+    var fromUsers = Number(users.connectedclients)
+    if (!isNaN(fromUsers)) return Math.max(0, Math.floor(fromUsers))
+    var fromStats = Number(stats.workers || stats.users || 0)
+    if (!isNaN(fromStats)) return Math.max(0, Math.floor(fromStats))
+    return 0
+  }
+
+  function updateCard(prefix, data) {
+    var stats = (data && data.stats) || {}
+    var connected = getConnectedCount(data)
 
     el(prefix + '-hashrate').textContent = formatHashrate(
       stats.hashrate5m || stats.hashrate1m || stats.hashrate
     )
-    el(prefix + '-workers').textContent = formatNumber(
-      users.connectedclients || stats.workers || stats.users || 0
-    )
+    el(prefix + '-workers').textContent = formatNumber(connected)
     el(prefix + '-blocks').textContent = formatNumber(
       stats.SolvedBlocks || stats.accepted || 0
     )
@@ -252,6 +260,9 @@
   // Build a combined worker list from pool + solo data
   function updateWorkers(poolData, soloData) {
     var allWorkers = []
+    var poolConnected = getConnectedCount(poolData)
+    var soloConnected = getConnectedCount(soloData)
+    var totalConnected = poolConnected + soloConnected
 
     var pw = (poolData && poolData.workers) || {}
     var poolList = pw.workers || []
@@ -271,21 +282,31 @@
     var empty = el('workers-empty')
     var wrap = el('workers-table-wrap')
     var badge = el('worker-count-badge')
+    var defaultEmptyText = 'No miners connected yet. Point your ASIC at the stratum URL above to get started.'
 
-    badge.textContent = allWorkers.length + ' connected'
+    var activeWorkers = allWorkers.filter(function (w) {
+      return workerStatus(w) !== 'dead'
+    })
 
-    if (allWorkers.length === 0) {
+    badge.textContent = totalConnected + ' connected'
+
+    if (activeWorkers.length === 0) {
+      empty.textContent = totalConnected > 0
+        ? 'Connected workers detected. Waiting for per-worker stats...'
+        : defaultEmptyText
       empty.style.display = ''
       wrap.style.display = 'none'
+      updateMyDevices([])
       return
     }
 
+    empty.textContent = defaultEmptyText
     empty.style.display = 'none'
     wrap.style.display = ''
 
     // Sort: alive first, idle second, dead last, then by hashrate descending
     var statusOrder = { alive: 0, idle: 1, dead: 2 }
-    allWorkers.sort(function (a, b) {
+    activeWorkers.sort(function (a, b) {
       var saKey = workerStatus(a)
       var sbKey = workerStatus(b)
       var sa = statusOrder[saKey] != null ? statusOrder[saKey] : 2
@@ -298,19 +319,19 @@
 
     // Auto-number workers without a .name suffix
     var autoCount = {}
-    for (var a = 0; a < allWorkers.length; a++) {
-      var wn = allWorkers[a].worker || allWorkers[a].user || ''
+    for (var a = 0; a < activeWorkers.length; a++) {
+      var wn = activeWorkers[a].worker || activeWorkers[a].user || ''
       var di = wn.indexOf('.')
       if (di <= 0 || di === wn.length - 1) {
         var addr = di > 0 ? wn.substring(0, di) : wn
         autoCount[addr] = (autoCount[addr] || 0) + 1
-        allWorkers[a]._autoName = 'worker' + String(autoCount[addr]).padStart(2, '0')
+        activeWorkers[a]._autoName = 'worker' + String(autoCount[addr]).padStart(2, '0')
       }
     }
 
     var html = ''
-    for (var k = 0; k < allWorkers.length; k++) {
-      var w = allWorkers[k]
+    for (var k = 0; k < activeWorkers.length; k++) {
+      var w = activeWorkers[k]
       var name = w.worker || w.user || '—'
       var shortName
       var dotIdx = name.indexOf('.')
@@ -343,7 +364,7 @@
     tbody.innerHTML = html
 
     // Update my devices panel if logged in
-    updateMyDevices(allWorkers)
+    updateMyDevices(activeWorkers)
   }
 
   function escapeHtml(s) {

@@ -82,16 +82,7 @@ read_users_data() {
   STATUS="/data/${1}/log/pool/pool.status"
   if [ -s "$STATUS" ]; then
     POOL_WORKERS=$(jq -sr 'add | (.Workers // .workers // 0)' "$STATUS" 2>/dev/null || echo 0)
-    if [ -n "$POOL_WORKERS" ] && [ "$POOL_WORKERS" -gt 0 ] 2>/dev/null; then
-      printf '%s' "{\"connectedclients\":${POOL_WORKERS}}"
-    else
-      UDIR="/data/${1}/log/users"
-      FALLBACK=0
-      if [ -d "$UDIR" ] && ls "$UDIR"/* >/dev/null 2>&1; then
-        FALLBACK=$(jq -cs '[ .[] | ((.worker // .workers // []) | length) ] | add // 0' "$UDIR"/* 2>/dev/null || echo 0)
-      fi
-      printf '%s' "{\"connectedclients\":${FALLBACK}}"
-    fi
+    printf '%s' "{\"connectedclients\":${POOL_WORKERS}}"
   else
     echo '{"connectedclients":0}'
   fi
