@@ -54,5 +54,11 @@ export const manifest = setupManifest({
       optional: true,
       s9pk: null,
     },
+    tor: {
+      description:
+        'StartOS Tor package providing SOCKS5 proxy support for optional onion-routed node RPC.',
+      optional: true,
+      s9pk: null,
+    },
   },
 })

@@ -4,10 +4,10 @@
   --border: #30363d;
   --text: #e6edf3;
   --text-muted: #8b949e;
-  --accent: #f7931a;
-  --accent-dim: rgba(247, 147, 26, 0.15);
-  --solo: #0ac18e;
-  --solo-dim: rgba(10, 193, 142, 0.15);
+  --accent: #0ac18e;
+  --accent-dim: rgba(10, 193, 142, 0.15);
+  --solo: #f0b90b;
+  --solo-dim: rgba(240, 185, 11, 0.15);
   --net: #58a6ff;
   --net-dim: rgba(88, 166, 255, 0.15);
   --radius: 12px;
@@ -75,7 +75,7 @@ h1 {
   color: var(--accent);
 }
 
-/* ── Dashboard layout ───────────────────────────────────────────── */
+/* ── Dashboard layout ─────────────────────────────────────────── */
 .dashboard {
   display: grid;
   grid-template-columns: 1fr 340px;
@@ -95,7 +95,7 @@ h1 {
   gap: 16px;
 }
 
-/* ── Cards ───────────────────────────────────────────────────── */
+/* ── Cards ─────────────────────────────────────────────────────── */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -277,7 +277,7 @@ h1 {
   font-size: 1.1rem;
 }
 
-/* ── Guide ───────────────────────────────────────────────────── */
+/* ── Guide ─────────────────────────────────────────────────────── */
 .guide {
   display: flex;
   flex-direction: column;
@@ -544,3 +544,49 @@ footer a:hover {
   text-align: center;
 }
 */
+
+/* ── Luck & Tor indicators ─────────────────────────────────────── */
+.luck-good    { color: #3fb950; }
+.luck-ok      { color: var(--accent); }
+.luck-warn    { color: #d29922; }
+.luck-bad     { color: #f85149; }
+
+.tor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(109,76,184,0.2);
+  color: #a371f7;
+  border: 1px solid rgba(163,113,247,0.3);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Luck progress bar ─────────────────────────────────────────── */
+.luck-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.luck-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease, background 0.3s;
+  max-width: 100%;
+}

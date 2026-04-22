@@ -5,6 +5,54 @@
   var REFRESH_MS = 5000
   var loggedInAddress = ''   // current address filter (empty = show all)
 
+  // ── Luck helpers ──────────────────────────────────────────────────
+  // pool.status "diff" = (accounted_diff_shares / network_diff) * 100
+  //   e.g. diff=150.0 means 1.5 blocks worth of work submitted total
+  // round_pct  = progress toward next block = diff - (solved * 100)
+  //   0% = just started / just found a block
+  //   100% = statistically due for next block
+  //   >100% = running over schedule (unlucky)
+  // luck_pct   = overall luck = solved / (diff/100) * 100
+  //   >100% = found more blocks than expected (lucky)
+  //   <100% = found fewer blocks than expected (unlucky)
+  function computeLuck(stats) {
+    var diffPct = parseFloat(stats && stats.diff) || 0
+    var solved  = parseInt(stats && stats.SolvedBlocks) || 0
+    if (diffPct <= 0) return { roundPct: 0, luckPct: null, solved: solved }
+    var roundPct = diffPct - (solved * 100)
+    if (roundPct < 0) roundPct = 0
+    var luckPct = solved > 0 ? (solved * 10000 / diffPct) : null
+    return { roundPct: roundPct, luckPct: luckPct, solved: solved }
+  }
+
+  function formatLuckPct(pct) {
+    if (pct == null || isNaN(pct)) return '—'
+    var n = Number(pct)
+    var s
+    if (n < 0.1)     s = n.toFixed(3)
+    else if (n < 10) s = n.toFixed(2)
+    else             s = n.toFixed(1)
+    return s + '%'
+  }
+
+  // Round progress color: low = on track (green), high = over-due (red)
+  function roundClass(pct) {
+    var n = Number(pct)
+    if (n < 80)   return 'luck-good'
+    if (n < 120)  return 'luck-ok'
+    if (n < 200)  return 'luck-warn'
+    return 'luck-bad'
+  }
+
+  // Luck color: high = lucky (green), low = unlucky (red)
+  function luckClass(pct) {
+    var n = Number(pct)
+    if (n > 110)  return 'luck-good'
+    if (n >= 90)  return 'luck-ok'
+    if (n >= 60)  return 'luck-warn'
+    return 'luck-bad'
+  }
+
   function formatHashrate(hps) {
     if (hps == null || isNaN(hps)) return '—'
     var n = Number(hps)
@@ -116,6 +164,26 @@
     el(prefix + '-bestshare').textContent = formatNumber(
       stats.bestshare || stats.best_share || 0
     )
+
+    // ── Luck metrics ──────────────────────────────────────────────
+    var luck = computeLuck(stats)
+
+    var roundEl = el(prefix + '-round-pct')
+    if (roundEl) {
+      roundEl.textContent = formatLuckPct(luck.roundPct)
+      roundEl.className = 'value ' + roundClass(luck.roundPct)
+    }
+
+    var luckEl = el(prefix + '-luck')
+    if (luckEl) {
+      if (luck.luckPct !== null) {
+        luckEl.textContent = formatLuckPct(luck.luckPct)
+        luckEl.className = 'value ' + luckClass(luck.luckPct)
+      } else {
+        luckEl.textContent = luck.solved === 0 ? 'No blocks yet' : '—'
+        luckEl.className = 'value'
+      }
+    }
   }
 
   function updateBlockchain(data) {
@@ -185,7 +253,6 @@
   function updateWorkers(poolData, soloData) {
     var allWorkers = []
 
-    // Workers from pool mode
     var pw = (poolData && poolData.workers) || {}
     var poolList = pw.workers || []
     for (var i = 0; i < poolList.length; i++) {
@@ -193,7 +260,6 @@
       allWorkers.push(poolList[i])
     }
 
-    // Workers from solo mode
     var sw = (soloData && soloData.workers) || {}
     var soloList = sw.workers || []
     for (var j = 0; j < soloList.length; j++) {
@@ -432,6 +498,28 @@
     })
   }
 
+  // ── Stratum URLs — dynamic, Tor-aware ────────────────────────────
+  // The pool exposes stratum on both LAN and Tor (via StartOS MultiHost).
+  // The dashboard is served from the same host, so window.location.hostname
+  // tells us which interface the user is on. If .onion → show Tor badge.
+  function setupStratumUrls() {
+    var host = window.location.hostname || 'localhost'
+    var isTor = host.endsWith('.onion')
+
+    var poolUrl   = el('pool-stratum-url')
+    var soloUrl   = el('solo-stratum-url')
+    var poolBadge = el('pool-tor-badge')
+    var soloBadge = el('solo-tor-badge')
+
+    if (poolUrl) poolUrl.textContent = 'stratum+tcp://' + host + ':3333'
+    if (soloUrl) soloUrl.textContent = 'stratum+tcp://' + host + ':4567'
+
+    if (isTor) {
+      if (poolBadge) poolBadge.style.display = ''
+      if (soloBadge) soloBadge.style.display = ''
+    }
+  }
+
   // Add SVG gradient for the ring
   var svg = document.querySelector('.sync-ring svg')
   if (svg) {
@@ -453,4 +541,5 @@
   tick()
   setInterval(tick, REFRESH_MS)
   setupLogin()
+  setupStratumUrls()
 })()

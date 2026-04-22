@@ -11,7 +11,28 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const poolIdentifier = store?.poolIdentifier ?? 'ASICSeer'
   const poolDifficulty = store?.poolDifficulty ?? 64
   const nodePackageId = store?.nodePackageId ?? 'bitcoincashd'
-  const nodeHost = `${nodePackageId}.startos`
+
+  const nodeAddressMode = store?.nodeAddressMode ?? 'auto'
+  const customNodeHost = (store?.customNodeHost ?? '').trim()
+  const customNodePort = store?.customNodePort ?? 8332
+  const defaultNodeHost = `${nodePackageId}.startos`
+  const nodeHost =
+    nodeAddressMode === 'custom' && customNodeHost.length > 0
+      ? customNodeHost
+      : defaultNodeHost
+  const nodePort =
+    Number.isFinite(customNodePort) && customNodePort > 0
+      ? customNodePort
+      : 8332
+
+  const torMode = store?.torMode ?? 'off'
+  const torProxyHost = (store?.torProxyHost ?? 'tor.startos').trim() || 'tor.startos'
+  const torProxyPort = store?.torProxyPort ?? 9050
+  const torEnabled = torMode !== 'off'
+  const torProxyUrl = `socks5h://${torProxyHost}:${torProxyPort}`
+  const rpcAuthMode = store?.rpcAuthMode ?? 'auto'
+  const manualRpcUser = (store?.manualRpcUser ?? '').trim()
+  const manualRpcPassword = store?.manualRpcPassword ?? ''
 
   // ── Mounts ───────────────────────────────────────────────────────
   const mounts = sdk.Mounts.of()
@@ -92,42 +113,88 @@ export const main = sdk.setupMain(async ({ effects }) => {
     console.warn('Node RPC password is empty in dependency store.json')
   }
 
-  const rpcProbeArgs = [
-    'curl',
-    '-sf',
-    '--max-time',
-    '3',
-    '-u',
-    `${rpcUser}:${rpcPassword}`,
-    '-H',
-    'Content-Type: application/json',
-    '-d',
-    '{"jsonrpc":"1.0","id":"startos","method":"getblockchaininfo","params":[]}',
-    `http://${nodeHost}:8332`,
-  ]
+  if (rpcAuthMode === 'manual' && manualRpcUser && manualRpcPassword) {
+    rpcUser = manualRpcUser
+    rpcPassword = manualRpcPassword
+  }
+
+  console.log(
+    `RPC target=${nodeHost}:${nodePort} user=${rpcUser} passLength=${rpcPassword.length} torMode=${torMode}`,
+  )
+
+  const rpcCall = async (method: string, params: unknown[]) => {
+    const args = [
+      'curl',
+      '-sS',
+      '--fail',
+      '--max-time',
+      '5',
+      '-u',
+      `${rpcUser}:${rpcPassword}`,
+      '-H',
+      'Content-Type: application/json',
+      '-d',
+      JSON.stringify({ jsonrpc: '1.0', id: 'startos', method, params }),
+      `http://${nodeHost}:${nodePort}`,
+    ]
+
+    if (torEnabled) {
+      args.splice(2, 0, '--proxy', torProxyUrl)
+    }
+
+    return poolSub.exec(args)
+  }
 
   const maxRpcProbeAttempts = 30
   let rpcReady = false
+  let lastProbeFailure = ''
   for (let attempt = 1; attempt <= maxRpcProbeAttempts; attempt++) {
     try {
-      const result = await poolSub.exec(rpcProbeArgs)
-      if (result.exitCode === 0) {
+      const infoResult = await rpcCall('getblockchaininfo', [])
+      const gbtResult = await rpcCall('getblocktemplate', [{}])
+
+      const infoBody = infoResult.stdout.toString()
+      const gbtBody = gbtResult.stdout.toString()
+      const infoOk = infoResult.exitCode === 0 && infoBody.includes('"error":null')
+      const gbtOk = gbtResult.exitCode === 0 && gbtBody.includes('"error":null')
+
+      if (infoOk && gbtOk) {
         rpcReady = true
         break
       }
-    } catch {
-      // Retry below.
+
+      lastProbeFailure = `RPC returned non-success JSON (infoExit=${infoResult.exitCode}, gbtExit=${gbtResult.exitCode})`
+      if (gbtBody.includes('403') || infoBody.includes('403')) {
+        lastProbeFailure =
+          'HTTP 403 Forbidden from node RPC. Check rpcuser/rpcpassword and node RPC access controls.'
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (message.includes('403')) {
+        lastProbeFailure =
+          'HTTP 403 Forbidden from node RPC. Credentials or RPC ACL are rejecting the request.'
+      } else if (message.includes('401')) {
+        lastProbeFailure =
+          'HTTP 401 Unauthorized from node RPC. Credentials are incorrect.'
+      } else if (message.includes('timed out')) {
+        lastProbeFailure = 'RPC request timed out. Check connectivity and node health.'
+      } else if (message.includes('Failed to connect')) {
+        lastProbeFailure =
+          'Cannot connect to node RPC endpoint. Check host, port, and selected network mode.'
+      } else {
+        lastProbeFailure = message
+      }
     }
 
     console.warn(
-      `Node RPC not ready at ${nodeHost}:8332 (attempt ${attempt}/${maxRpcProbeAttempts})`,
+      `Node RPC probe failed at ${nodeHost}:${nodePort} (attempt ${attempt}/${maxRpcProbeAttempts}): ${lastProbeFailure}`,
     )
     await poolSub.exec(['sleep', '2'])
   }
 
   if (!rpcReady) {
     throw new Error(
-      `Node RPC at ${nodeHost}:8332 did not become ready in time`,
+      `Node RPC at ${nodeHost}:${nodePort} did not become ready: ${lastProbeFailure}`,
     )
   }
 
@@ -141,55 +208,59 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const ensureFloat = (s: string) =>
     s.replace(/"pool_fee":\s*(\d+)(?!\.)/g, '"pool_fee": $1.0')
 
-  const poolConf = ensureFloat(JSON.stringify(
-    {
-      btcd: [
-        {
-          url: `${nodeHost}:8332`,
-          auth: rpcUser,
-          pass: rpcPassword,
-          notify: true,
-        },
-      ],
-      bchaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      bchsig: `/${poolIdentifier}/`,
-      blockpoll: 100,
-      update_interval: 30,
-      serverurl: [`0.0.0.0:${poolPort}`],
-      mindiff: 1,
-      startdiff: poolDifficulty,
-      maxdiff: 0,
-      logdir: `${rootDir}/pool/log`,
-      pool_fee: poolFee,
-    },
-    null,
-    2,
-  ))
+  const poolConf = ensureFloat(
+    JSON.stringify(
+      {
+        btcd: [
+          {
+            url: `${nodeHost}:${nodePort}`,
+            auth: rpcUser,
+            pass: rpcPassword,
+            notify: true,
+          },
+        ],
+        bchaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        bchsig: `/${poolIdentifier}/`,
+        blockpoll: 100,
+        update_interval: 30,
+        serverurl: [`0.0.0.0:${poolPort}`],
+        mindiff: 1,
+        startdiff: poolDifficulty,
+        maxdiff: 0,
+        logdir: `${rootDir}/pool/log`,
+        pool_fee: poolFee,
+      },
+      null,
+      2,
+    ),
+  )
 
-  const soloConf = ensureFloat(JSON.stringify(
-    {
-      btcd: [
-        {
-          url: `${nodeHost}:8332`,
-          auth: rpcUser,
-          pass: rpcPassword,
-          notify: true,
-        },
-      ],
-      bchaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      bchsig: `/${poolIdentifier}-solo/`,
-      blockpoll: 100,
-      update_interval: 30,
-      serverurl: [`0.0.0.0:${soloPort}`],
-      mindiff: 1,
-      startdiff: poolDifficulty,
-      maxdiff: 0,
-      logdir: `${rootDir}/solo/log`,
-      pool_fee: 0,
-    },
-    null,
-    2,
-  ))
+  const soloConf = ensureFloat(
+    JSON.stringify(
+      {
+        btcd: [
+          {
+            url: `${nodeHost}:${nodePort}`,
+            auth: rpcUser,
+            pass: rpcPassword,
+            notify: true,
+          },
+        ],
+        bchaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        bchsig: `/${poolIdentifier}-solo/`,
+        blockpoll: 100,
+        update_interval: 30,
+        serverurl: [`0.0.0.0:${soloPort}`],
+        mindiff: 1,
+        startdiff: poolDifficulty,
+        maxdiff: 0,
+        logdir: `${rootDir}/solo/log`,
+        pool_fee: 0,
+      },
+      null,
+      2,
+    ),
+  )
 
   await poolSub.exec([
     'sh',
@@ -203,15 +274,19 @@ export const main = sdk.setupMain(async ({ effects }) => {
     `mkdir -p ${rootDir}/solo/log && cat > ${rootDir}/solo/asicseer.conf << 'EOCONF'\n${soloConf}\nEOCONF`,
   ])
 
+  const proxyPrefix = torEnabled
+    ? `export ALL_PROXY='${torProxyUrl}' HTTP_PROXY='${torProxyUrl}' HTTPS_PROXY='${torProxyUrl}'; `
+    : ''
+
   // ── Daemons ──────────────────────────────────────────────────────
   return sdk.Daemons.of(effects)
     .addDaemon('pool', {
       subcontainer: poolSub,
       exec: {
         command: [
-          'pool-entrypoint.sh',
-          'pool',
-          `${rootDir}/pool/asicseer.conf`,
+          'sh',
+          '-c',
+          `${proxyPrefix}exec pool-entrypoint.sh pool ${rootDir}/pool/asicseer.conf`,
         ],
         sigtermTimeout: 30_000,
       },
@@ -229,9 +304,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
       subcontainer: soloSub,
       exec: {
         command: [
-          'pool-entrypoint.sh',
-          'solo',
-          `${rootDir}/solo/asicseer.conf`,
+          'sh',
+          '-c',
+          `${proxyPrefix}exec pool-entrypoint.sh solo ${rootDir}/solo/asicseer.conf`,
         ],
         sigtermTimeout: 30_000,
       },

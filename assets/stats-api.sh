@@ -43,6 +43,13 @@ rpc_call() {
 # WebUI expects: hashrate5m (numeric H/s), workers, accepted, bestshare.
 read_pool_stats() {
   STATUS="/data/${1}/log/pool/pool.status"
+  # Count solved blocks from block files written by ckpool/asicseer-pool
+  BLOCKS_DIR="/data/${1}/log/pool/blocks"
+  SOLVED=0
+  if [ -d "$BLOCKS_DIR" ]; then
+    SOLVED=$(ls "$BLOCKS_DIR" 2>/dev/null | wc -l | tr -d ' ')
+  fi
+
   if [ -s "$STATUS" ]; then
     jq -s "$JQ_DEFS"'add | {
       hashrate5m:  ((.hashrate5m  // .Hashrate5m  // "0") | hr2n),
@@ -56,14 +63,16 @@ read_pool_stats() {
       rejected:    (.rejected // 0),
       bestshare:   (.bestshare // 0),
       runtime:     (.runtime // 0),
+      diff:        ((.diff // "0") | if type == "string" then (tonumber // 0) else (. // 0) end),
+      SolvedBlocks: '"$SOLVED"',
       status:      "ok",
       status_message: "Pool stats active"
     }' "$STATUS" 2>/dev/null || echo '{}'
   else
     if [ -d "/data/${1}/log/pool" ]; then
-      echo '{"hashrate5m":0,"hashrate1m":0,"hashrate1hr":0,"hashrate1d":0,"hashrate7d":0,"workers":0,"users":0,"accepted":0,"rejected":0,"bestshare":0,"runtime":0,"status":"waiting_for_miners","status_message":"Waiting for first miner stats"}'
+      echo '{"hashrate5m":0,"hashrate1m":0,"hashrate1hr":0,"hashrate1d":0,"hashrate7d":0,"workers":0,"users":0,"accepted":0,"rejected":0,"bestshare":0,"runtime":0,"diff":0,"SolvedBlocks":0,"status":"waiting_for_miners","status_message":"Waiting for first miner stats"}'
     else
-      echo '{"hashrate5m":0,"hashrate1m":0,"hashrate1hr":0,"hashrate1d":0,"hashrate7d":0,"workers":0,"users":0,"accepted":0,"rejected":0,"bestshare":0,"runtime":0,"status":"initializing","status_message":"Pool status file not created yet"}'
+      echo '{"hashrate5m":0,"hashrate1m":0,"hashrate1hr":0,"hashrate1d":0,"hashrate7d":0,"workers":0,"users":0,"accepted":0,"rejected":0,"bestshare":0,"runtime":0,"diff":0,"SolvedBlocks":0,"status":"initializing","status_message":"Pool status file not created yet"}'
     fi
   fi
 }
@@ -125,7 +134,7 @@ read_workers_data() {
   fi
 }
 
-# ── Read RPC credentials from asicseer config ──────────────────────
+# ── Read RPC credentials from ckpool config ────────────────────────
 load_rpc_creds() {
   if [ -f "$CONF" ]; then
     RPC_URL=$(jq -r '.btcd[0].url // empty' "$CONF" 2>/dev/null)

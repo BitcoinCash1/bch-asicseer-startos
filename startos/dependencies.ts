@@ -52,16 +52,16 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
         when: { condition: 'input-not-matches', once: false },
       })
     } else {
-      // BCHN: ensure pruning off
+      // BCHN: txindex=true implicitly enforces non-pruned operation and avoids prune null/0 mismatch.
       await sdk.action.createTask(effects, nodePackageId, bchnAutoconfig, 'critical', {
         input: {
           kind: 'partial',
           value: {
-            prune: 0,
+            txindex: true,
           },
         },
         reason:
-          'Pruning must be disabled for mining pool operation.',
+          'Mining RPC requires BCHN in non-pruned mode with txindex enabled.',
         when: { condition: 'input-not-matches', once: false },
       })
     }
@@ -78,13 +78,21 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   } else if (nodePackageId === 'flowee') {
     deps['flowee'] = {
       kind: 'running',
-        versionRange: '>=2026.2.0:0',
+      versionRange: '>=2026.2.0:0',
       healthChecks: ['primary'],
     }
   } else {
     deps[nodePackageId] = {
       kind: 'running',
       versionRange: '>=29.0.0:0',
+      healthChecks: ['primary'],
+    }
+  }
+
+  if ((store?.torMode ?? 'off') !== 'off') {
+    deps['tor'] = {
+      kind: 'running',
+      versionRange: '>=0.0.0:0',
       healthChecks: ['primary'],
     }
   }
