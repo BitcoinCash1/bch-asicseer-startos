@@ -117,16 +117,40 @@ read_workers_data() {
     [ -z "$DIFF_MAP" ] && DIFF_MAP='{}'
   fi
 
+  # Build a jq map { "<workername>": reject_count } from the pool's sharelog.
+  # ckpool writes every share submission (accepted OR rejected) as one JSON
+  # line to /data/{mode}/log/{blockheight}/{idstring}.sharelog including
+  # "workername" and "result": true/false. That is the authoritative source
+  # for per-worker reject counts (the pool's in-memory structs don't carry
+  # them). We aggregate across all sharelog files in the logdir tree.
+  REJECT_MAP='{}'
+  # Limit to the 500 most-recently modified sharelogs to bound cost on
+  # long-running pools. Files are per block (~10 min worth of shares each).
+  SLFILES=$(find "/data/${1}/log" -maxdepth 2 -name '*.sharelog' -type f 2>/dev/null \
+              | head -n 500)
+  if [ -n "$SLFILES" ]; then
+    # shellcheck disable=SC2086
+    REJECT_MAP=$(cat $SLFILES 2>/dev/null \
+      | jq -cs '
+          map(select(.result == false and (.workername // "") != ""))
+          | group_by(.workername)
+          | map({key: .[0].workername, value: length})
+          | from_entries
+        ' 2>/dev/null) || REJECT_MAP='{}'
+    [ -z "$REJECT_MAP" ] && REJECT_MAP='{}'
+  fi
+
   if [ -d "$UDIR" ] && ls "$UDIR"/* >/dev/null 2>&1; then
     WORKERS='[]'
     for FILE in "$UDIR"/*; do
       [ -f "$FILE" ] || continue
 
-      PARSED=$(jq -c --argjson now "$NOW" --argjson diffmap "$DIFF_MAP" "$JQ_DEFS"'
+      PARSED=$(jq -c --argjson now "$NOW" --argjson diffmap "$DIFF_MAP" --argjson rejmap "$REJECT_MAP" "$JQ_DEFS"'
         [((.worker // .workers // []))[] |
           ((.lastshare // 0) as $ls |
           (.workername // "") as $wn |
           (($diffmap[$wn]) // 0) as $cdiff |
+          (($rejmap[$wn]) // 0) as $rej |
           ((.shares // .accepted // 0) | tonumber? // 0) as $sacc |
           (if $cdiff > 0 then (($sacc / $cdiff) | floor) else 0 end) as $acount |
           (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
@@ -138,7 +162,7 @@ read_workers_data() {
             dsps60:         (((.hashrate1hr // "0") | hr2n) / 4294967296),
             accepted:       $sacc,
             accepted_count: $acount,
-            rejected:       (.rejected // .stale // .invalid // 0),
+            rejected:       $rej,
             current_diff:   $cdiff,
             bestdiff:       (.bestshare // 0),
             lastshare:      $ls,
