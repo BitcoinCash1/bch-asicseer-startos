@@ -90,10 +90,11 @@ The onion keys survive StartOS reboots and are preserved by the standard StartOS
 
 ### Dashboard Metrics — What the Numbers Mean
 
-- **Shares (Σdiff)** — asicseer-pool's `accepted` field, which is a *diff-1–weighted sum* (Σ of each accepted share's difficulty), NOT a raw submit count. That's why the number looks huge (e.g. `176.00 M`). Displayed with SI suffix.
-- **Rejected** — rejected shares: stale, invalid, or below assigned difficulty. Should stay near zero.
-- **Share Diff** — the current share difficulty (vardiff) that the pool assigns to this worker. The pool tunes it so the worker submits shares at a comfortable rate. Unrelated to network difficulty. (See [kryptex.com/articles/share-difficulty-en](https://pool.kryptex.com/articles/share-difficulty-en) for background.)
+- **Accepted** / **Rejected** — counts as the pool reports them. **Important caveat:** asicseer-pool does NOT expose a per-worker raw submit count in its JSON — the `accepted` field it publishes is actually a *diff-1–weighted sum* (Σ of each accepted share's difficulty). That's why the Accepted column can read e.g. `180,000,000` instead of a small integer. For the true miner-side submit count (e.g. Avalon/cgminer showing `Accepted: 6, Rejected: 0`) check your ASIC's own web UI or cgminer API. `Rejected` is also what the pool reports; rejected-share telemetry is often only pool-wide and may show 0 per-worker.
+- **Shares (Σdiff)** — the same `accepted` field, rendered with SI suffix (e.g. `180.00 M`) — the traditional ckpool-family-dashboard view.
+- **Share Diff** — the current share difficulty (vardiff) that the pool assigns to this worker. The pool tunes it so the worker submits shares at a comfortable rate. Unrelated to network difficulty. (See [kryptex.com/articles/share-difficulty-en](https://pool.kryptex.com/articles/share-difficulty-en).)
 - **Best Share** — highest individual share difficulty ever submitted by this worker. When Best Share approaches network difficulty (~355 EH on BCH right now), a block is about to be found.
+- **Last Share** / **Status** — Status is derived from the pool's `lastshare` unix timestamp (authoritative, updated on every accepted share): under 5 min = Alive, under 1 h = Idle, older = Dead. Hashrate averages are only used as a last-resort fallback when `lastshare` is missing, so the badge cannot get stuck at "Alive" after a miner goes dark.
 - **Found Blocks** (main card) — counted directly from files in `/data/pool/log/pool/blocks/` (asicseer-pool writes one file per solved block). A true integer count, not derived from share work.
 
 ## Running StartOS in a Virtual Machine

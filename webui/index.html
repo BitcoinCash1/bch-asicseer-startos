@@ -155,12 +155,13 @@
                 <th>Worker</th>
                 <th>Hashrate (5m)</th>
                 <th>Hashrate (1h)</th>
-                <th title="asicseer-pool reports accepted shares as a diff-1–weighted sum (Σ of each share's difficulty), NOT a raw submit count. That's why it looks huge (e.g. 176.00 M). Formatted with SI suffix.">Shares (Σdiff)</th>
-                <th title="Share submissions rejected by the pool (stale, invalid, or below the assigned difficulty). Should stay near zero.">Rejected</th>
-                <th title="Current share difficulty (vardiff) assigned by the pool to this worker. The pool tunes this so the worker submits shares at a comfortable rate. Unrelated to network difficulty.">Share Diff</th>
-                <th title="Highest individual share difficulty ever submitted by this worker. When Best Share approaches network difficulty, a block is about to be found.">Best Share</th>
-                <th>Last Share</th>
-                <th>Status</th>
+                <th title="Accepted shares count. NOTE: asicseer-pool does NOT expose a per-worker raw submit count — the number shown here is the pool's 'accepted' field, which is actually a diff-1–weighted sum of every accepted share's difficulty. For the real miner-side submit count, check the ASIC's own interface (e.g. cgminer / Avalon shows Accepted=6 style integers).">Accepted</th>
+                <th title="Rejected shares (stale, invalid, or below assigned difficulty). Should stay near zero.">Rejected</th>
+                <th title="Same pool 'accepted' field rendered with SI suffix (e.g. 180.00 M). This is the diff-1–weighted view of the same number shown in the Accepted column — it's how ckpool-family dashboards traditionally display it.">Shares (Σdiff)</th>
+                <th title="Current share difficulty (vardiff) the pool assigns to this worker. Distinct from accepted shares and from network difficulty.">Share Diff</th>
+                <th title="Highest individual share difficulty ever submitted by this worker. When this approaches network difficulty, a block is about to be found.">Best Share</th>
+                <th title="Timestamp of the worker's most recent accepted share (pool-side, authoritative).">Last Share</th>
+                <th title="Status derived from Last Share age (pool-side source of truth): <5 min Alive, <1 h Idle, otherwise Dead.">Status</th>
               </tr>
             </thead>
             <tbody id="workers-tbody"></tbody>
@@ -185,10 +186,11 @@
                 <th>Worker</th>
                 <th>Online</th>
                 <th>Hashrate (5m)</th>
-                <th title="asicseer-pool reports accepted shares as a diff-1–weighted sum (Σ of each share's difficulty), NOT a raw submit count. That's why it looks huge (e.g. 176.00 M). Formatted with SI suffix.">Shares (Σdiff)</th>
-                <th title="Share submissions rejected by the pool (stale, invalid, or below the assigned difficulty). Should stay near zero.">Rejected</th>
-                <th title="Current share difficulty (vardiff) assigned by the pool to this worker. Unrelated to network difficulty.">Share Diff</th>
-                <th title="Highest individual share difficulty ever submitted by this worker.">Best Share</th>
+                <th title="Accepted shares count (pool's 'accepted' field — actually diff-1–weighted; see Online Devices tooltip).">Accepted</th>
+                <th title="Rejected shares (stale, invalid, or below assigned difficulty).">Rejected</th>
+                <th title="Same field, SI-formatted (diff-1–weighted sum).">Shares (Σdiff)</th>
+                <th title="Current share difficulty (vardiff) the pool assigns to this worker.">Share Diff</th>
+                <th title="Highest individual share difficulty ever submitted.">Best Share</th>
               </tr>
             </thead>
             <tbody id="my-devices-tbody"></tbody>

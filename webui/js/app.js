@@ -154,7 +154,24 @@
     return s
   }
 
+  // Worker liveness: source of truth is the pool's own `lastshare` unix
+  // timestamp (updated every time the worker submits a valid share).
+  // Hashrate windows are smoothed averages and can appear "alive" for
+  // minutes after a miner goes dark, so lastshare age is authoritative.
+  //   < 5 min  -> alive
+  //   < 1 hour -> idle
+  //   otherwise -> dead
+  // Fall back to hashrate / reported status only when no lastshare exists.
   function workerStatus(w) {
+    var lastShare = Number((w && w.lastshare) || 0)
+    if (lastShare > 0) {
+      var ageSec = Math.floor(Date.now() / 1000) - lastShare
+      if (ageSec < 0) ageSec = 0
+      if (ageSec < 300)  return 'alive'
+      if (ageSec < 3600) return 'idle'
+      return 'dead'
+    }
+    // no lastshare reported — best-effort fallback to hashrate / status field
     var reported = String(w && w.status || '').toLowerCase()
     var hr5 = Number((w && w.dsps5) || 0)
     var hr60 = Number((w && w.dsps60) || 0)
@@ -162,17 +179,8 @@
     var altHrLong = Number((w && (w.hashrate1hr || w.hashrate1d || w.hashrate7d)) || 0)
     if (hr5 > 0 || hr60 > 0 || altHrShort > 0) return 'alive'
     if (altHrLong > 0) return 'idle'
-
-    var lastShare = Number((w && w.lastshare) || 0)
-    if (lastShare > 0) {
-      var ageSec = Math.floor(Date.now() / 1000) - lastShare
-      if (ageSec < 300) return 'alive'
-      if (ageSec < 3600) return 'idle'
-      return 'dead'
-    }
-
     if (reported === 'alive' || reported === 'idle' || reported === 'dead') return reported
-    return w && w.idle ? 'idle' : 'alive'
+    return w && w.idle ? 'idle' : 'dead'
   }
 
   function el(id) { return document.getElementById(id) }
@@ -395,8 +403,9 @@
       html += '<span class="worker-mode ' + modeClass + '">' + w._mode + '</span></td>'
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + hr60 + '</td>'
-      html += '<td>' + formatWork(accepted) + '</td>'
+      html += '<td>' + formatNumber(accepted) + '</td>'
       html += '<td>' + formatNumber(rejected) + '</td>'
+      html += '<td>' + formatWork(accepted) + '</td>'
       html += '<td>' + shareDiff + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '<td>' + lastShare + '</td>'
@@ -515,8 +524,9 @@
       html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span></td>'
       html += '<td><span class="status-dot ' + status + '"></span>' + statusLabel + '</td>'
       html += '<td>' + hr5m + '</td>'
-      html += '<td>' + formatWork(accepted) + '</td>'
+      html += '<td>' + formatNumber(accepted) + '</td>'
       html += '<td>' + formatNumber(rejected) + '</td>'
+      html += '<td>' + formatWork(accepted) + '</td>'
       html += '<td>' + shareDiff + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '</tr>'
