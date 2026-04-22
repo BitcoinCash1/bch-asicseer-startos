@@ -360,29 +360,35 @@ footer a:hover {
 }
 
 .workers-table-wrap {
+  /* Horizontal scroll only kicks in on ultra-narrow (mobile) viewports.
+     On desktop the table fits because we dropped the misleading
+     per-worker Accepted/Rejected count columns (asicseer-pool stores
+     only diff-weighted sums per-worker). */
   overflow-x: auto;
+  width: 100%;
 }
 
 .workers-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.825rem;
+  font-size: 0.8rem;
+  table-layout: auto;
 }
 
 .workers-table th {
   text-align: left;
-  padding: 10px 16px;
+  padding: 8px 10px;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
 .workers-table td {
-  padding: 10px 16px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
