@@ -90,8 +90,8 @@ The onion keys survive StartOS reboots and are preserved by the standard StartOS
 
 ### Dashboard Metrics — What the Numbers Mean
 
-- **Accepted Difficulty** — cumulative sum of each accepted share's difficulty
-- **Rejected** — shares the pool rejected (stale, invalid, or below assigned difficulty). Should stay near zero.
+- **Accepted** — accepted shares, as reported by asicseer-pool's `accepted` JSON field. This is the standard ckpool/asicseer-pool metric: a difficulty-weighted sum, not a raw submit count. Displayed with SI suffix (e.g. `176.00 M`). Higher is better.
+- **Rejected** — rejected shares (`rejected` field): stale, invalid, or below assigned difficulty. Should stay near zero.
 - **Best Share** — highest individual share difficulty ever accepted for this worker. When this approaches the network difficulty (~355 EH at current BCH diff) a block is about to be found.
 - **Found Blocks** (main card) — counted by listing files in `/data/pool/log/pool/blocks/`. asicseer-pool writes exactly one file per solved block, so this is a true integer count, not derived from share work.
 
