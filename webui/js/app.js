@@ -76,6 +76,20 @@
     return Number(n).toLocaleString()
   }
 
+  function workerCounter(w, key) {
+    var direct = Number(w && w[key])
+    if (!isNaN(direct)) return direct
+    if (key === 'accepted') {
+      var altA = Number(w && (w.shares || w.valid || w.accepted_shares))
+      if (!isNaN(altA)) return altA
+    }
+    if (key === 'rejected') {
+      var altR = Number(w && (w.stale || w.invalid || w.rejected_shares))
+      if (!isNaN(altR)) return altR
+    }
+    return null
+  }
+
   function formatBytes(bytes) {
     if (bytes == null || isNaN(bytes)) return '—'
     var n = Number(bytes)
@@ -343,6 +357,8 @@
 
       var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
       var hr60 = formatHashrate(dspsToHashrate(w.dsps60) || Number(w.hashrate60m || w.hashrate || 0))
+      var accepted = workerCounter(w, 'accepted')
+      var rejected = workerCounter(w, 'rejected')
       var bestDiff = formatDifficulty(w.bestdiff)
       var lastShare = timeAgo(w.lastshare)
       var status = workerStatus(w)
@@ -354,6 +370,8 @@
       html += '<span class="worker-mode ' + modeClass + '">' + w._mode + '</span></td>'
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + hr60 + '</td>'
+      html += '<td>' + formatNumber(accepted) + '</td>'
+      html += '<td>' + formatNumber(rejected) + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '<td>' + lastShare + '</td>'
       html += '<td><span class="status-dot ' + status + '"></span>'
@@ -455,6 +473,8 @@
       }
 
       var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
+      var accepted = workerCounter(w, 'accepted')
+      var rejected = workerCounter(w, 'rejected')
       var bestDiff = formatDifficulty(w.bestdiff)
       var status = workerStatus(w)
       var statusLabel = status === 'alive' ? 'Yes' : 'No'
@@ -463,6 +483,8 @@
       html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span></td>'
       html += '<td><span class="status-dot ' + status + '"></span>' + statusLabel + '</td>'
       html += '<td>' + hr5m + '</td>'
+      html += '<td>' + formatNumber(accepted) + '</td>'
+      html += '<td>' + formatNumber(rejected) + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '</tr>'
     }
@@ -534,6 +556,10 @@
 
     if (poolUrl) poolUrl.textContent = 'stratum+tcp://' + host + ':3333'
     if (soloUrl) soloUrl.textContent = 'stratum+tcp://' + host + ':4567'
+    var guidePool = el('guide-pool-url')
+    var guideSolo = el('guide-solo-url')
+    if (guidePool) guidePool.textContent = 'stratum+tcp://' + host + ':3333'
+    if (guideSolo) guideSolo.textContent = 'stratum+tcp://' + host + ':4567'
 
     if (isTor) {
       if (poolBadge) poolBadge.style.display = ''

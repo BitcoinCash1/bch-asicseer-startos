@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ASICSeer — BCH Mining Pool</title>
+  <title>ASICSeer - BCH Mining Pool</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -36,7 +36,6 @@
     </header>
 
     <div class="dashboard">
-      <!-- Blockchain Section (left) -->
       <div class="card blockchain-card">
         <div class="card-header">
           <h2>Blockchain</h2>
@@ -45,7 +44,7 @@
           <div class="sync-hero">
             <div class="sync-text">
               <div class="sync-label">Synchronized</div>
-              <div class="sync-pct" id="sync-pct">—</div>
+              <div class="sync-pct" id="sync-pct">-</div>
               <div class="sync-sub" id="sync-sub">Waiting for node...</div>
             </div>
             <div class="sync-ring" id="sync-ring">
@@ -53,136 +52,77 @@
                 <circle class="ring-bg" cx="60" cy="60" r="50" />
                 <circle class="ring-fg" cx="60" cy="60" r="50" id="ring-progress" />
               </svg>
-              <div class="ring-label" id="ring-label">—</div>
+              <div class="ring-label" id="ring-label">-</div>
             </div>
           </div>
           <div class="stat-grid">
-            <div class="stat-box">
-              <span class="label">BLOCKS</span>
-              <span class="value" id="node-blocks">—</span>
-            </div>
-            <div class="stat-box">
-              <span class="label">HEADERS</span>
-              <span class="value" id="node-headers">—</span>
-            </div>
-            <div class="stat-box">
-              <span class="label">CHAIN LAG</span>
-              <span class="value" id="node-lag">—</span>
-              <span class="label small">BLOCKS BEHIND / AHEAD</span>
-            </div>
-            <div class="stat-box">
-              <span class="label">PEERS</span>
-              <span class="value" id="node-peers">—</span>
-            </div>
-            <div class="stat-box">
-              <span class="label">MEMPOOL</span>
-              <span class="value" id="node-mempool">—</span>
-            </div>
-            <div class="stat-box">
-              <span class="label">DISK</span>
-              <span class="value" id="node-disk">—</span>
-            </div>
+            <div class="stat-box"><span class="label">Blocks</span><span class="value" id="node-blocks">-</span></div>
+            <div class="stat-box"><span class="label">Headers</span><span class="value" id="node-headers">-</span></div>
+            <div class="stat-box"><span class="label">Chain Lag</span><span class="value" id="node-lag">-</span><span class="label small">BEHIND / AHEAD</span></div>
+            <div class="stat-box"><span class="label">Peers</span><span class="value" id="node-peers">-</span></div>
+            <div class="stat-box"><span class="label">Mempool</span><span class="value" id="node-mempool">-</span></div>
+            <div class="stat-box"><span class="label">Disk</span><span class="value" id="node-disk">-</span></div>
           </div>
         </div>
       </div>
 
-      <!-- Pool Section (right) -->
       <div class="pool-stack">
-        <!-- Pool Mining Card -->
         <div class="card">
           <div class="card-header">
             <h2>Pool Mining</h2>
             <span class="badge pool">Stratum v1</span>
           </div>
           <div class="card-body">
-            <div class="stat-row">
-              <span class="label">Port</span>
-              <span class="value" id="pool-port">3333</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Workers</span>
-              <span class="value" id="pool-workers">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Hashrate</span>
-              <span class="value" id="pool-hashrate">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Blocks Found</span>
-              <span class="value" id="pool-blocks">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Best Share</span>
-              <span class="value" id="pool-bestshare">—</span>
-            </div>
+            <div class="stat-row"><span class="label">Port</span><span class="value" id="pool-port">3333</span></div>
+            <div class="stat-row"><span class="label">Workers</span><span class="value" id="pool-workers">-</span></div>
+            <div class="stat-row"><span class="label">Hashrate</span><span class="value" id="pool-hashrate">-</span></div>
+            <div class="stat-row"><span class="label">Blocks Found</span><span class="value" id="pool-blocks">-</span></div>
+            <div class="stat-row"><span class="label">Round Progress</span><span class="value" id="pool-round-pct">-</span></div>
+            <div class="stat-row"><span class="label">Luck</span><span class="value" id="pool-luck">-</span></div>
+            <div class="stat-row"><span class="label">Best Share</span><span class="value" id="pool-bestshare">-</span></div>
           </div>
           <div class="card-footer">
-            <code>stratum+tcp://&lt;host&gt;:3333</code>
+            <code id="pool-stratum-url">stratum+tcp://host:3333</code>
+            <span class="tor-badge" id="pool-tor-badge" style="display:none">Tor</span>
           </div>
         </div>
 
-        <!-- Solo Mining Card -->
         <div class="card">
           <div class="card-header">
             <h2>Solo Mining</h2>
             <span class="badge solo">Winner Takes All</span>
           </div>
           <div class="card-body">
-            <div class="stat-row">
-              <span class="label">Port</span>
-              <span class="value" id="solo-port">4567</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Workers</span>
-              <span class="value" id="solo-workers">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Hashrate</span>
-              <span class="value" id="solo-hashrate">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Blocks Found</span>
-              <span class="value" id="solo-blocks">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Best Share</span>
-              <span class="value" id="solo-bestshare">—</span>
-            </div>
+            <div class="stat-row"><span class="label">Port</span><span class="value" id="solo-port">4567</span></div>
+            <div class="stat-row"><span class="label">Workers</span><span class="value" id="solo-workers">-</span></div>
+            <div class="stat-row"><span class="label">Hashrate</span><span class="value" id="solo-hashrate">-</span></div>
+            <div class="stat-row"><span class="label">Blocks Found</span><span class="value" id="solo-blocks">-</span></div>
+            <div class="stat-row"><span class="label">Round Progress</span><span class="value" id="solo-round-pct">-</span></div>
+            <div class="stat-row"><span class="label">Luck</span><span class="value" id="solo-luck">-</span></div>
+            <div class="stat-row"><span class="label">Best Share</span><span class="value" id="solo-bestshare">-</span></div>
           </div>
           <div class="card-footer">
-            <code>stratum+tcp://&lt;host&gt;:4567</code>
+            <code id="solo-stratum-url">stratum+tcp://host:4567</code>
+            <span class="tor-badge" id="solo-tor-badge" style="display:none">Tor</span>
           </div>
         </div>
 
-        <!-- Network Stats Card -->
         <div class="card">
           <div class="card-header">
             <h2>Network</h2>
             <span class="badge net">SHA256D</span>
           </div>
           <div class="card-body">
-            <div class="stat-row">
-              <span class="label">Network Difficulty</span>
-              <span class="value" id="net-difficulty">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Network Hashrate</span>
-              <span class="value" id="net-hashrate">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">ETA to Find Block</span>
-              <span class="value highlight" id="eta-block">—</span>
-            </div>
+            <div class="stat-row"><span class="label">Network Difficulty</span><span class="value" id="net-difficulty">-</span></div>
+            <div class="stat-row"><span class="label">Network Hashrate</span><span class="value" id="net-hashrate">-</span></div>
+            <div class="stat-row"><span class="label">ETA to Find Block</span><span class="value highlight" id="eta-block">-</span></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Login / Address Filter -->
     <div class="card wide login-card">
-      <div class="card-header">
-        <h2>Login</h2>
-      </div>
+      <div class="card-header"><h2>Login</h2></div>
       <div class="card-body">
         <div class="login-row">
           <input type="text" id="login-address" class="login-input" placeholder="Address (bitcoincash:q...)" autocomplete="off" spellcheck="false">
@@ -192,100 +132,17 @@
       </div>
     </div>
 
-    <!-- Uptime (visible when logged in) -->
     <div class="card wide" id="uptime-card" style="display:none">
       <div class="card-body" style="text-align:center;padding:12px 20px">
         <span class="label">Uptime</span>
-        <span class="value" id="user-uptime" style="margin-left:8px">—</span>
+        <span class="value" id="user-uptime" style="margin-left:8px">-</span>
       </div>
     </div>
 
-    <!-- Connection Guide -->
     <div class="card wide">
       <div class="card-header">
-        <h2>Getting Started</h2>
-      </div>
-      <div class="card-body guide">
-        <div class="step">
-                  <div class="step">
-                    <div class="step-num">4</div>
-                    <div>
-                      <strong>Connect over Tor</strong>
-                      <p>This pool exposes its stratum ports as Tor hidden services. If you access this dashboard via a <code>.onion</code> address, use that same hostname on port 3333 or 4567 in your miner. The stratum URL is shown at the bottom of each mining card.</p>
-                    </div>
-                  </div>
-          <div class="step-num">1</div>
-          <div class="card-body">
-            <div class="stat-row">
-              <span class="label">Port</span>
-              <span class="value" id="pool-port">3333</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Workers</span>
-              <span class="value" id="pool-workers">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Hashrate</span>
-              <span class="value" id="pool-hashrate">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Blocks Found</span>
-              <span class="value" id="pool-blocks">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Round Progress</span>
-              <span class="value" id="pool-round-pct">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Luck</span>
-              <span class="value" id="pool-luck">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Best Share</span>
-              <span class="value" id="pool-bestshare">—</span>
-            </div>
-          </div>
-          <div class="card-footer">
-            <code id="pool-stratum-url">stratum+tcp://…:3333</code>
-            <span class="tor-badge" id="pool-tor-badge" style="display:none">🧅 Tor</span>
-          </div>
         <h2>Online Devices</h2>
-        <span class="badge pool" id="my-device-count-badge">0</span>
-      </div>
-          <div class="card-body">
-            <div class="stat-row">
-              <span class="label">Port</span>
-              <span class="value" id="solo-port">4567</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Workers</span>
-              <span class="value" id="solo-workers">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Hashrate</span>
-              <span class="value" id="solo-hashrate">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Blocks Found</span>
-              <span class="value" id="solo-blocks">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Round Progress</span>
-              <span class="value" id="solo-round-pct">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Luck</span>
-              <span class="value" id="solo-luck">—</span>
-            </div>
-            <div class="stat-row">
-              <span class="label">Best Share</span>
-              <span class="value" id="solo-bestshare">—</span>
-            </div>
-          </div>
-          <div class="card-footer">
-            <code id="solo-stratum-url">stratum+tcp://…:4567</code>
-            <span class="tor-badge" id="solo-tor-badge" style="display:none">🧅 Tor</span>
-          </div>
+        <span class="badge pool" id="worker-count-badge">0 connected</span>
       </div>
       <div class="card-body" style="padding:0">
         <div class="workers-empty" id="workers-empty">
@@ -298,6 +155,8 @@
                 <th>Worker</th>
                 <th>Hashrate (5m)</th>
                 <th>Hashrate (1h)</th>
+                <th>Accepted</th>
+                <th>Rejected</th>
                 <th>Best Share</th>
                 <th>Last Share</th>
                 <th>Status</th>
@@ -309,25 +168,69 @@
       </div>
     </div>
 
-    <!-- ── Donation Section (uncomment to enable) ──────────────────
-    <div class="card wide donation-card">
+    <div class="card wide" id="my-devices-card" style="display:none">
       <div class="card-header">
-        <h2>Donate</h2>
+        <h2>My Devices</h2>
+        <span class="badge pool" id="my-device-count-badge">0</span>
       </div>
-      <div class="card-body">
-        <p class="donation-text">Like the pool? Consider a donation.</p>
-        <div class="donation-addresses">
-          <div class="donation-item">
-            <div class="donation-qr" id="donate-bch-qr"></div>
-            <code class="donation-addr">bitcoincash:qr...</code>
+      <div class="card-body" style="padding:0">
+        <div class="workers-empty" id="my-devices-empty">
+          <p>No workers found for this payout address.</p>
+        </div>
+        <div class="workers-table-wrap" id="my-devices-table-wrap" style="display:none">
+          <table class="workers-table">
+            <thead>
+              <tr>
+                <th>Worker</th>
+                <th>Online</th>
+                <th>Hashrate (5m)</th>
+                <th>Accepted</th>
+                <th>Rejected</th>
+                <th>Best Share</th>
+              </tr>
+            </thead>
+            <tbody id="my-devices-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <div class="card-header"><h2>Getting Started</h2></div>
+      <div class="card-body guide">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <strong>Pool mode</strong>
+            <p>Use <code id="guide-pool-url">stratum+tcp://host:3333</code> for shared mining payouts.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <strong>Solo mode</strong>
+            <p>Use <code id="guide-solo-url">stratum+tcp://host:4567</code> for winner-takes-all solo mining.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <strong>Username format</strong>
+            <p>Set worker username to your BCH payout address, optionally with a suffix like <code>bitcoincash:q...worker01</code>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <strong>Tor access</strong>
+            <p>If this dashboard is loaded on a <code>.onion</code> host, use the same hostname with ports 3333/4567 in your miner.</p>
           </div>
         </div>
       </div>
     </div>
-    ─────────────────────────────────────────────────────────────── -->
 
     <footer>
-      <p>Powered by <a href="https://github.com/skaisser/ckpool" target="_blank">EloPool</a> (ckpool) · Stratum v1 · For StartOS</p>
+      <p>Powered by <a href="https://github.com/skaisser/ckpool" target="_blank">ASICSeer</a> (asicseer-pool) · Stratum v1 · For StartOS</p>
     </footer>
   </div>
 

@@ -109,6 +109,8 @@ read_workers_data() {
             worker:    .workername,
             dsps5:     (((.hashrate5m  // "0") | hr2n) / 4294967296),
             dsps60:    (((.hashrate1hr // "0") | hr2n) / 4294967296),
+            accepted:  (.accepted // .shares // .valid // 0),
+            rejected:  (.rejected // .stale // .invalid // 0),
             bestdiff:  (.bestshare // 0),
             lastshare: (.lastshare // 0),
             idle:      ($status != "alive"),
