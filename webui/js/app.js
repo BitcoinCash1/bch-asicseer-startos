@@ -385,7 +385,6 @@
       var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
       var hr60 = formatHashrate(dspsToHashrate(w.dsps60) || Number(w.hashrate60m || w.hashrate || 0))
       var accepted = workerCounter(w, 'accepted')
-      var rejected = workerCounter(w, 'rejected')
       var acceptedCount = Number(w.accepted_count || 0)
       var bestDiff = formatDifficulty(w.bestdiff)
       var lastShare = timeAgo(w.lastshare)
@@ -399,7 +398,6 @@
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + hr60 + '</td>'
       html += '<td>' + formatNumber(acceptedCount) + '</td>'
-      html += '<td>' + formatNumber(rejected) + '</td>'
       html += '<td>' + formatWork(accepted) + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '<td>' + lastShare + '</td>'
@@ -503,7 +501,6 @@
 
       var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
       var accepted = workerCounter(w, 'accepted')
-      var rejected = workerCounter(w, 'rejected')
       var acceptedCount = Number(w.accepted_count || 0)
       var bestDiff = formatDifficulty(w.bestdiff)
       var status = workerStatus(w)
@@ -514,7 +511,6 @@
       html += '<td><span class="status-dot ' + status + '"></span>' + statusLabel + '</td>'
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + formatNumber(acceptedCount) + '</td>'
-      html += '<td>' + formatNumber(rejected) + '</td>'
       html += '<td>' + formatWork(accepted) + '</td>'
       html += '<td>' + bestDiff + '</td>'
       html += '</tr>'

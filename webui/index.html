@@ -156,7 +156,6 @@
                 <th>Hashrate (5m)</th>
                 <th>Hashrate (1h)</th>
                 <th title="Accepted share submissions — an integer count equivalent to what your ASIC's cgminer API reports as 'Accepted'. Derived as floor(Σdiff / current_vardiff). The current vardiff is read live from asicseer-pool's control socket.">Accepted</th>
-                <th title="Rejected shares. NOTE: asicseer-pool's per-worker log does not carry rejection telemetry — rejects are accounted pool-wide only. This column reflects whatever the per-user file exposes (usually 0).">Rejected</th>
                 <th title="Same shares, viewed as diff-1 weighted WORK (Σ of each accepted share's difficulty). Useful for comparing workers across different vardiff targets.">Shares (Σdiff)</th>
                 <th title="Highest individual share difficulty ever submitted by this worker. When this approaches network difficulty, a block is about to be found.">Best Share</th>
                 <th title="Timestamp of the worker's most recent accepted share (pool-side, authoritative).">Last Share</th>
@@ -186,7 +185,6 @@
                 <th>Online</th>
                 <th>Hashrate (5m)</th>
                 <th title="Accepted share submissions — integer count, matches cgminer-API Accepted.">Accepted</th>
-                <th title="Rejected shares (pool-side; usually 0 per-worker).">Rejected</th>
                 <th title="Same shares as Σ diff-1 weighted work.">Shares (Σdiff)</th>
                 <th title="Highest individual share difficulty ever submitted.">Best Share</th>
               </tr>
