@@ -155,9 +155,10 @@
                 <th>Worker</th>
                 <th>Hashrate (5m)</th>
                 <th>Hashrate (1h)</th>
-                <th title="Accepted shares, reported by asicseer-pool as a difficulty-weighted sum (the standard ckpool-style 'accepted' field). Displayed with SI suffix, e.g. 176.00 M. Higher is better.">Accepted</th>
+                <th title="asicseer-pool reports accepted shares as a diff-1–weighted sum (Σ of each share's difficulty), NOT a raw submit count. That's why it looks huge (e.g. 176.00 M). Formatted with SI suffix.">Shares (Σdiff)</th>
                 <th title="Share submissions rejected by the pool (stale, invalid, or below the assigned difficulty). Should stay near zero.">Rejected</th>
-                <th>Best Share</th>
+                <th title="Current share difficulty (vardiff) assigned by the pool to this worker. The pool tunes this so the worker submits shares at a comfortable rate. Unrelated to network difficulty.">Share Diff</th>
+                <th title="Highest individual share difficulty ever submitted by this worker. When Best Share approaches network difficulty, a block is about to be found.">Best Share</th>
                 <th>Last Share</th>
                 <th>Status</th>
               </tr>
@@ -184,9 +185,10 @@
                 <th>Worker</th>
                 <th>Online</th>
                 <th>Hashrate (5m)</th>
-                <th title="Accepted shares, reported by asicseer-pool as a difficulty-weighted sum (the standard ckpool-style 'accepted' field). Displayed with SI suffix, e.g. 176.00 M. Higher is better.">Accepted</th>
+                <th title="asicseer-pool reports accepted shares as a diff-1–weighted sum (Σ of each share's difficulty), NOT a raw submit count. That's why it looks huge (e.g. 176.00 M). Formatted with SI suffix.">Shares (Σdiff)</th>
                 <th title="Share submissions rejected by the pool (stale, invalid, or below the assigned difficulty). Should stay near zero.">Rejected</th>
-                <th>Best Share</th>
+                <th title="Current share difficulty (vardiff) assigned by the pool to this worker. Unrelated to network difficulty.">Share Diff</th>
+                <th title="Highest individual share difficulty ever submitted by this worker.">Best Share</th>
               </tr>
             </thead>
             <tbody id="my-devices-tbody"></tbody>

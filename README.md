@@ -90,10 +90,11 @@ The onion keys survive StartOS reboots and are preserved by the standard StartOS
 
 ### Dashboard Metrics — What the Numbers Mean
 
-- **Accepted** — accepted shares, as reported by asicseer-pool's `accepted` JSON field. This is the standard ckpool/asicseer-pool metric: a difficulty-weighted sum, not a raw submit count. Displayed with SI suffix (e.g. `176.00 M`). Higher is better.
-- **Rejected** — rejected shares (`rejected` field): stale, invalid, or below assigned difficulty. Should stay near zero.
-- **Best Share** — highest individual share difficulty ever accepted for this worker. When this approaches the network difficulty (~355 EH at current BCH diff) a block is about to be found.
-- **Found Blocks** (main card) — counted by listing files in `/data/pool/log/pool/blocks/`. asicseer-pool writes exactly one file per solved block, so this is a true integer count, not derived from share work.
+- **Shares (Σdiff)** — asicseer-pool's `accepted` field, which is a *diff-1–weighted sum* (Σ of each accepted share's difficulty), NOT a raw submit count. That's why the number looks huge (e.g. `176.00 M`). Displayed with SI suffix.
+- **Rejected** — rejected shares: stale, invalid, or below assigned difficulty. Should stay near zero.
+- **Share Diff** — the current share difficulty (vardiff) that the pool assigns to this worker. The pool tunes it so the worker submits shares at a comfortable rate. Unrelated to network difficulty. (See [kryptex.com/articles/share-difficulty-en](https://pool.kryptex.com/articles/share-difficulty-en) for background.)
+- **Best Share** — highest individual share difficulty ever submitted by this worker. When Best Share approaches network difficulty (~355 EH on BCH right now), a block is about to be found.
+- **Found Blocks** (main card) — counted directly from files in `/data/pool/log/pool/blocks/` (asicseer-pool writes one file per solved block). A true integer count, not derived from share work.
 
 ## Running StartOS in a Virtual Machine
 
