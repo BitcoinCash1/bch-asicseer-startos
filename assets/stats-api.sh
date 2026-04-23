@@ -124,19 +124,32 @@ read_workers_data() {
   # for per-worker reject counts (the pool's in-memory structs don't carry
   # them). We aggregate across all sharelog files in the logdir tree.
   REJECT_MAP='{}'
+  ACCEPT_MAP='{}'
   # Limit to the 500 most-recently modified sharelogs to bound cost on
   # long-running pools. Files are per block (~10 min worth of shares each).
   SLFILES=$(find "/data/${1}/log" -maxdepth 2 -name '*.sharelog' -type f 2>/dev/null \
               | head -n 500)
   if [ -n "$SLFILES" ]; then
     # shellcheck disable=SC2086
-    REJECT_MAP=$(cat $SLFILES 2>/dev/null \
+    SHAREMAPS=$(cat $SLFILES 2>/dev/null \
       | jq -cs '
-          map(select(.result == false and (.workername // "") != ""))
-          | group_by(.workername)
-          | map({key: .[0].workername, value: length})
-          | from_entries
-        ' 2>/dev/null) || REJECT_MAP='{}'
+          (map(select((.workername // "") != ""))
+           | group_by(.workername)
+           | map({
+               wn: .[0].workername,
+               acc: (map(select(.result == true)) | length),
+               rej: (map(select(.result == false)) | length)
+             })) as $g
+          | {
+              acc: ($g | map({key: .wn, value: .acc}) | from_entries),
+              rej: ($g | map({key: .wn, value: .rej}) | from_entries)
+            }
+        ' 2>/dev/null)
+    if [ -n "$SHAREMAPS" ]; then
+      ACCEPT_MAP=$(printf '%s' "$SHAREMAPS" | jq -c '.acc // {}' 2>/dev/null) || ACCEPT_MAP='{}'
+      REJECT_MAP=$(printf '%s' "$SHAREMAPS" | jq -c '.rej // {}' 2>/dev/null) || REJECT_MAP='{}'
+    fi
+    [ -z "$ACCEPT_MAP" ] && ACCEPT_MAP='{}'
     [ -z "$REJECT_MAP" ] && REJECT_MAP='{}'
   fi
 
@@ -145,14 +158,17 @@ read_workers_data() {
     for FILE in "$UDIR"/*; do
       [ -f "$FILE" ] || continue
 
-      PARSED=$(jq -c --argjson now "$NOW" --argjson diffmap "$DIFF_MAP" --argjson rejmap "$REJECT_MAP" "$JQ_DEFS"'
+      PARSED=$(jq -c --argjson now "$NOW" --argjson diffmap "$DIFF_MAP" --argjson accmap "$ACCEPT_MAP" --argjson rejmap "$REJECT_MAP" "$JQ_DEFS"'
         [((.worker // .workers // []))[] |
           ((.lastshare // 0) as $ls |
           (.workername // "") as $wn |
           (($diffmap[$wn]) // 0) as $cdiff |
+          (($accmap[$wn]) // null) as $accSL |
           (($rejmap[$wn]) // 0) as $rej |
           ((.shares // .accepted // 0) | tonumber? // 0) as $sacc |
-          (if $cdiff > 0 then (($sacc / $cdiff) | floor) else 0 end) as $acount |
+          (if $accSL != null then $accSL
+           elif $cdiff > 0 then (($sacc / $cdiff) | floor)
+           else 0 end) as $acount |
           (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
            elif ($now - $ls) > 300 then "idle"
            else "alive" end) as $status |
