@@ -127,7 +127,7 @@ read_workers_data() {
   ACCEPT_MAP='{}'
   # Limit to the 500 most-recently modified sharelogs to bound cost on
   # long-running pools. Files are per block (~10 min worth of shares each).
-  SLFILES=$(find "/data/${1}/log" -maxdepth 2 -name '*.sharelog' -type f 2>/dev/null \
+  SLFILES=$(find "/data/${1}/log" -maxdepth 4 -name '*.sharelog' -type f 2>/dev/null \
               | head -n 500)
   if [ -n "$SLFILES" ]; then
     # shellcheck disable=SC2086
@@ -151,6 +151,13 @@ read_workers_data() {
     fi
     [ -z "$ACCEPT_MAP" ] && ACCEPT_MAP='{}'
     [ -z "$REJECT_MAP" ] && REJECT_MAP='{}'
+
+    # Diagnostic dump so we can see the sharelog state from the browser.
+    SAMPLE=$(echo "$SLFILES" | head -n 1 | xargs -r head -n 1 2>/dev/null)
+    NFILES=$(printf '%s\n' "$SLFILES" | sed '/^$/d' | wc -l | tr -d ' ')
+    printf '%s' "{\"mode\":\"$1\",\"sharelog_files\":${NFILES},\"accept_map\":${ACCEPT_MAP},\"reject_map\":${REJECT_MAP},\"sample_line\":$(printf '%s' "$SAMPLE" | jq -Rs .)}" \
+      > "${API_DIR}/sharelog-debug-${1}.json.tmp" 2>/dev/null \
+      && mv "${API_DIR}/sharelog-debug-${1}.json.tmp" "${API_DIR}/sharelog-debug-${1}.json" 2>/dev/null
   fi
 
   if [ -d "$UDIR" ] && ls "$UDIR"/* >/dev/null 2>&1; then
