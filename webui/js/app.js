@@ -585,12 +585,12 @@
     var poolBadge = el('pool-tor-badge')
     var soloBadge = el('solo-tor-badge')
 
-    if (poolUrl) poolUrl.textContent = 'stratum+tcp://' + host + ':3333'
-    if (soloUrl) soloUrl.textContent = 'stratum+tcp://' + host + ':4567'
+    if (poolUrl) poolUrl.textContent = 'stratum+tcp://' + host + ':3334'
+    if (soloUrl) soloUrl.textContent = 'stratum+tcp://' + host + ':4568'
     var guidePool = el('guide-pool-url')
     var guideSolo = el('guide-solo-url')
-    if (guidePool) guidePool.textContent = 'stratum+tcp://' + host + ':3333'
-    if (guideSolo) guideSolo.textContent = 'stratum+tcp://' + host + ':4567'
+    if (guidePool) guidePool.textContent = 'stratum+tcp://' + host + ':3334'
+    if (guideSolo) guideSolo.textContent = 'stratum+tcp://' + host + ':4568'
 
     if (isTor) {
       if (poolBadge) poolBadge.style.display = ''
