@@ -23,12 +23,12 @@ rm -rf "/tmp/${MODE}" 2>/dev/null
 # -n sets the process name (controls socket directory under /tmp/{name}/)
 # -B enables solo mode (only for solo daemon)
 if [ "$MODE" = "solo" ]; then
-  CMD="ckpool -c $CONF -n $MODE -B"
+  CMD="asicseer -c $CONF -n $MODE -B"
 else
-  CMD="ckpool -c $CONF -n $MODE"
+  CMD="asicseer -c $CONF -n $MODE"
 fi
 
-log "starting ckpool mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknown} rpc_user=${RPC_USER:-unknown}"
+log "starting asicseer mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknown} rpc_user=${RPC_USER:-unknown}"
 
 # ckpool only creates the sharelog directory /data/{mode}/log/{blockheight:08x}/
 # when it detects a NEW block. Between restarts (or before the next block is
@@ -99,11 +99,11 @@ while true; do
 
   RETRY=$((RETRY + 1))
   if [ "$RETRY" -ge "$MAX_RETRIES" ]; then
-    echo "ckpool ($MODE) failed $MAX_RETRIES times, giving up"
+    echo "asicseer ($MODE) failed $MAX_RETRIES times, giving up"
     exit 1
   fi
 
-  log "ckpool (${MODE}) exited with code ${EXIT_CODE}, restarting in 5s (attempt ${RETRY}/${MAX_RETRIES})"
+  log "asicseer (${MODE}) exited with code ${EXIT_CODE}, restarting in 5s (attempt ${RETRY}/${MAX_RETRIES})"
   # Clean stale sockets before retry
   rm -rf "/tmp/${MODE}" 2>/dev/null
   log "cleaned stale socket dir /tmp/${MODE}"
