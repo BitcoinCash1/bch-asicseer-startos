@@ -163,12 +163,9 @@ read_workers_data() {
           ((.lastshare // 0) as $ls |
           (.workername // "") as $wn |
           (($diffmap[$wn]) // 0) as $cdiff |
-          (($accmap[$wn]) // null) as $accSL |
+          (($accmap[$wn]) // 0) as $acount |
           (($rejmap[$wn]) // 0) as $rej |
           ((.shares // .accepted // 0) | tonumber? // 0) as $sacc |
-          (if $accSL != null then $accSL
-           elif $cdiff > 0 then (($sacc / $cdiff) | floor)
-           else 0 end) as $acount |
           (if ($ls <= 0 or ($now - $ls) > 3600) then "dead"
            elif ($now - $ls) > 300 then "idle"
            else "alive" end) as $status |
