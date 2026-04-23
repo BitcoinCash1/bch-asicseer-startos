@@ -151,14 +151,15 @@ read_workers_data() {
     fi
     [ -z "$ACCEPT_MAP" ] && ACCEPT_MAP='{}'
     [ -z "$REJECT_MAP" ] && REJECT_MAP='{}'
-
-    # Diagnostic dump so we can see the sharelog state from the browser.
-    SAMPLE=$(echo "$SLFILES" | head -n 1 | xargs -r head -n 1 2>/dev/null)
-    NFILES=$(printf '%s\n' "$SLFILES" | sed '/^$/d' | wc -l | tr -d ' ')
-    printf '%s' "{\"mode\":\"$1\",\"sharelog_files\":${NFILES},\"accept_map\":${ACCEPT_MAP},\"reject_map\":${REJECT_MAP},\"sample_line\":$(printf '%s' "$SAMPLE" | jq -Rs .)}" \
-      > "${API_DIR}/sharelog-debug-${1}.json.tmp" 2>/dev/null \
-      && mv "${API_DIR}/sharelog-debug-${1}.json.tmp" "${API_DIR}/sharelog-debug-${1}.json" 2>/dev/null
   fi
+
+  # Diagnostic dump so we can see the sharelog state from the browser even
+  # when no sharelog files exist yet (pre-first-share state).
+  SAMPLE=$(printf '%s\n' "$SLFILES" | head -n 1 | xargs -r head -n 1 2>/dev/null)
+  NFILES=$(printf '%s\n' "$SLFILES" | sed '/^$/d' | wc -l | tr -d ' ')
+  printf '%s' "{\"mode\":\"$1\",\"sharelog_files\":${NFILES},\"accept_map\":${ACCEPT_MAP},\"reject_map\":${REJECT_MAP},\"sample_line\":$(printf '%s' "$SAMPLE" | jq -Rs . 2>/dev/null || echo '""')}" \
+    > "${API_DIR}/sharelog-debug-${1}.json.tmp" 2>/dev/null \
+    && mv "${API_DIR}/sharelog-debug-${1}.json.tmp" "${API_DIR}/sharelog-debug-${1}.json" 2>/dev/null
 
   if [ -d "$UDIR" ] && ls "$UDIR"/* >/dev/null 2>&1; then
     WORKERS='[]'
