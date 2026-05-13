@@ -7,7 +7,7 @@ import { storeJson } from './file-models/store.json'
 export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   const store = await storeJson.read().const(effects)
   const selectedNodePackageId = store?.nodePackageId ?? 'bitcoincashd'
-  const nodePackageId = ['bitcoincashd', 'bchd', 'flowee'].includes(selectedNodePackageId)
+  const nodePackageId = ['bitcoincashd', 'bchd', 'flowee', 'knuth-bch'].includes(selectedNodePackageId)
     ? selectedNodePackageId
     : 'bitcoincashd'
 
@@ -17,9 +17,11 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     'bitcoincashd:autoconfig',
     'bchd:autoconfig',
     'flowee:autoconfig',
+    'knuth-bch:autoconfig',
     'bitcoincashd-autoconfig',
     'bchd-autoconfig',
     'flowee-autoconfig',
+    'knuth-bch-autoconfig',
     'select-node',
     'bitcoincash:autoconfig',
   )
@@ -51,6 +53,9 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
           'REST API must be enabled for mining pool operation.',
         when: { condition: 'input-not-matches', once: false },
       })
+    } else if (nodePackageId === 'knuth-bch') {
+      // Knuth: no JSON-RPC in upstream yet; nothing to autoconfigure.
+      // Mining pool will fail at RPC handshake until upstream RPC ships.
     } else {
       // BCHN: txindex=true implicitly enforces non-pruned operation and avoids prune null/0 mismatch.
       await sdk.action.createTask(effects, nodePackageId, bchnAutoconfig, 'critical', {
@@ -79,6 +84,12 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     deps['flowee'] = {
       kind: 'running',
       versionRange: '>=2026.2.0:0',
+      healthChecks: ['primary'],
+    }
+  } else if (nodePackageId === 'knuth-bch') {
+    deps['knuth-bch'] = {
+      kind: 'running',
+      versionRange: '>=0.80.0:0',
       healthChecks: ['primary'],
     }
   } else {

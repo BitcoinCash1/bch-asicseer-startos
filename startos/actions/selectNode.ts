@@ -12,6 +12,7 @@ const nodeInputSpec = InputSpec.of({
       bitcoincashd: 'Bitcoin Cash Node (BCHN)',
       bchd: 'Bitcoin Cash Daemon (BCHD)',
       flowee: 'Flowee the Hub',
+      'knuth-bch': 'Knuth',
     },
   }),
 })
@@ -36,7 +37,7 @@ export const selectNode = sdk.Action.withInput(
     const store = await storeJson.read().once()
     const nodePackageId = store?.nodePackageId ?? 'bitcoincashd'
     return {
-      nodePackageId: nodePackageId as 'bitcoincashd' | 'bchd' | 'flowee',
+      nodePackageId: nodePackageId as 'bitcoincashd' | 'bchd' | 'flowee' | 'knuth-bch',
     }
   },
 
