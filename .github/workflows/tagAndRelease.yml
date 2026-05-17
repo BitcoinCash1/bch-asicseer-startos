@@ -3,7 +3,7 @@ name: Tag and Release
 on:
   push:
     branches: ['master']
-    paths-ignore: ['*.md']
+    paths-ignore: ['README.md']
 
 permissions:
   contents: write
@@ -82,4 +82,3 @@ jobs:
           prerelease: false
           body_path: change-log.txt
           files: ./*.s9pk
-
