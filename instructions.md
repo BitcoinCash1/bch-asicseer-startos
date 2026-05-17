@@ -19,9 +19,9 @@ supports dual-mode operation — **pool mining** (proportional shared rewards) a
 ASICSeer requires a running and fully-synced Bitcoin Cash full node. Supported node
 backends on StartOS:
 
-- **Bitcoin Cash Node (BCHN)** — recommended. Fastest IBD, no special configuration needed.
-- **Bitcoin Cash Daemon (BCHD)** — also supported.
-- **Flowee the Hub** — also supported.
+- **Bitcoin Cash Node (BCHN)**
+- **Bitcoin Cash Daemon (BCHD)**
+- **Flowee the Hub**
 - **Knuth** — JSON-RPC is not yet available in the current upstream Knuth release;
   selecting it will surface an RPC error until Knuth ships its built-in RPC module.
 
@@ -30,7 +30,7 @@ node's RPC credentials automatically.
 
 ## Getting started
 
-1. Install a BCH full node (BCHN recommended) and let it fully sync.
+1. Install a BCH full node and let it fully sync.
 2. Install ASICSeer.
 3. Run **Actions → Configure Pool** to set:
    - **Payout Address** — your BCH address to receive block rewards.
