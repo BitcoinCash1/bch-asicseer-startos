@@ -9,8 +9,10 @@ RUN apt-get update && \
 COPY asicseer-src/ /build/asicseer/
 WORKDIR /build/asicseer
 # BCHD requires an "id" field in every JSON-RPC request; upstream ckpool/asicseer omits it.
-# Patch all request strings in bitcoin.c before compiling.
-RUN sed -i 's/{\\\"method\\\": /{\\\"id\\\":0,\\\"method\\\": /g; s/{\\\"method\\\":\\\"/{\\\"id\\\":0,\\\"method\\\":\\\"/g' src/bitcoin.c
+# Also remove "coinbasetxn" from the GBT capabilities: BCHD interprets it as
+# "build me a ready-made coinbase" and errors unless --miningaddr is set.
+# Without coinbasetxn, BCHD returns a normal template and the pool builds its own coinbase.
+RUN sed -i 's/{\\\"method\\\": /{\\\"id\\\":0,\\\"method\\\": /g; s/{\\\"method\\\":\\\"/{\\\"id\\\":0,\\\"method\\\":\\\"/g; s/\\\"coinbasetxn\\\", //g' src/bitcoin.c
 RUN mkdir out && cd out && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
 # ── Runtime ─────────────────────────────────────────────────────────
