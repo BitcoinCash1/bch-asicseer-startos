@@ -1,0 +1,3 @@
+[submodule "asicseer-src"]
+	path = asicseer-src
+	url = https://github.com/cculianu/asicseer-pool.git
