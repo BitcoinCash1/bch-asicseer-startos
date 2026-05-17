@@ -1,7 +1,7 @@
 import { VersionInfo } from '@start9labs/start-sdk'
 
-export const v_1_0_0_2 = VersionInfo.of({
-  version: '1.0.0:2',
+export const v_1_0_1_0 = VersionInfo.of({
+  version: '1.0.1:0',
   releaseNotes:
     'Fix getblocktemplate with BCHD node backend. ' +
     'BCHD interprets the "coinbasetxn" GBT capability as a request to build ' +
