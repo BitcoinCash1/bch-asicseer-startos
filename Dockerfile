@@ -13,6 +13,11 @@ WORKDIR /build/asicseer
 # "build me a ready-made coinbase" and errors unless --miningaddr is set.
 # Without coinbasetxn, BCHD returns a normal template and the pool builds its own coinbase.
 RUN sed -i 's/{\\\"method\\\": /{\\\"id\\\":0,\\\"method\\\": /g; s/{\\\"method\\\":\\\"/{\\\"id\\\":0,\\\"method\\\":\\\"/g; s/\\\"coinbasetxn\\\", //g' src/bitcoin.c
+# Go's net/http randomises header map order, so BCHD sometimes sends Content-Type *after*
+# Content-Length. The original code reads exactly one line after Content-Length expecting
+# the blank line separator; it gets Content-Type (31 bytes) instead and aborts the RPC call.
+# Fix: drain all remaining header lines in a loop until the blank line is found.
+RUN sed -i 's/if ((ret = read_socket_line(cs, &timeout)) != 1) {/while ((ret = read_socket_line(cs, \&timeout)) > 1) {} if (ret != 1) {/' src/asicseer-pool.c
 RUN mkdir out && cd out && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
 # ── Runtime ─────────────────────────────────────────────────────────
