@@ -18,6 +18,10 @@ RUN sed -i 's/{\\\"method\\\": /{\\\"id\\\":0,\\\"method\\\": /g; s/{\\\"method\
 # the blank line separator; it gets Content-Type (31 bytes) instead and aborts the RPC call.
 # Fix: drain all remaining header lines in a loop until the blank line is found.
 RUN sed -i 's/if ((ret = read_socket_line(cs, &timeout)) != 1) {/while ((ret = read_socket_line(cs, \&timeout)) > 1) {} if (ret != 1) {/' src/asicseer-pool.c
+# BCHD has no built-in wallet so validateaddress omits "isscript". The original code
+# calls quit() when isscript is absent. Instead default tmp_val to json_false() so
+# is_p2sh is set to false (P2PKH), which is correct for standard BCH payout addresses.
+RUN sed -i 's/quit(1, "No isscript support from bitcoind -- please use a bitcoind with wallet support.");/tmp_val = json_false(); \/* BCHD: no wallet, assume P2PKH *\//' src/bitcoin.c
 RUN mkdir out && cd out && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
 # ── Runtime ─────────────────────────────────────────────────────────
