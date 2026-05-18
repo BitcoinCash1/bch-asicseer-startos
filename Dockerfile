@@ -3,7 +3,7 @@ FROM ubuntu:22.04 AS build-asicseer
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    build-essential cmake libzmq3-dev ca-certificates && \
+    build-essential cmake libzmq3-dev ca-certificates python3 && \
     rm -rf /var/lib/apt/lists/*
 
 COPY asicseer-src/ /build/asicseer/

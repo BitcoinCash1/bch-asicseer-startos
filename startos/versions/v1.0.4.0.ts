@@ -5,7 +5,8 @@ export const v_1_0_4_0 = VersionInfo.of({
   releaseNotes:
     'Fix BCHD mining: validateaddress on BCHD omits scriptPubKey (no wallet). ' +
     'Added CashAddr decoder to derive scriptPubKey directly from the payout address ' +
-    'for P2PKH (q-prefix) and P2SH (p-prefix) BCH addresses.',
+    'for P2PKH (q-prefix) and P2SH (p-prefix) BCH addresses. ' +
+    'Also added python3 to the build image for the patch script.',
   migrations: {
     up: async ({ effects }) => {},
     down: async ({ effects }) => {},
