@@ -61,6 +61,55 @@ static int cashaddr_to_scriptpubkey_(const char *address, unsigned char *script,
     return 0;
 }
 
+/* Base58 alphabet (Bitcoin/BCH legacy addresses) */
+static const char base58_alphabet_[] = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+/* Derive scriptPubKey from a legacy Base58Check address (no wallet RPC needed).
+ * Handles P2PKH (version 0x00, starts with '1' -> 25-byte script)
+ * and P2SH  (version 0x05, starts with '3' -> 23-byte script).
+ * Skips checksum verification — the address was already validated by the node.
+ * Returns script byte length on success, 0 on failure. */
+static int base58check_to_scriptpubkey_(const char *address, unsigned char *script, int maxlen)
+{
+    if (!address || !script || maxlen < 23) return 0;
+    int alen = (int)strlen(address);
+    if (alen < 25 || alen > 35) return 0;
+    /* Map each character to 0-57 */
+    unsigned char digits[35];
+    for (int i = 0; i < alen; i++) {
+        const char *q = strchr(base58_alphabet_, (unsigned char)address[i]);
+        if (!q) return 0;
+        digits[i] = (unsigned char)(q - base58_alphabet_);
+    }
+    /* Decode base58 big-integer into 25 bytes */
+    unsigned char decoded[25]; memset(decoded, 0, 25);
+    for (int i = 0; i < alen; i++) {
+        unsigned int carry = digits[i];
+        for (int j = 24; j >= 0; j--) {
+            carry += 58u * decoded[j];
+            decoded[j] = (unsigned char)(carry & 0xFF);
+            carry >>= 8;
+        }
+    }
+    unsigned char ver = decoded[0];
+    const unsigned char *hash = decoded + 1; /* bytes 1-20 are the hash160 */
+    if (ver == 0x00) { /* P2PKH: OP_DUP OP_HASH160 <20> hash OP_EQUALVERIFY OP_CHECKSIG */
+        if (maxlen < 25) return 0;
+        script[0]=0x76; script[1]=0xa9; script[2]=0x14;
+        memcpy(script + 3, hash, 20);
+        script[23]=0x88; script[24]=0xac;
+        return 25;
+    }
+    if (ver == 0x05) { /* P2SH: OP_HASH160 <20> hash OP_EQUAL */
+        if (maxlen < 23) return 0;
+        script[0]=0xa9; script[1]=0x14;
+        memcpy(script + 2, hash, 20);
+        script[22]=0x87;
+        return 23;
+    }
+    return 0;
+}
+
 """
 
 OLD_QUIT = ('        if (unlikely(!tmp_val || !(spk = json_string_value(tmp_val)))) {\n'
@@ -70,12 +119,13 @@ OLD_QUIT = ('        if (unlikely(!tmp_val || !(spk = json_string_value(tmp_val)
             '        }')
 
 NEW_BLOCK = ('        if (!tmp_val || !(spk = json_string_value(tmp_val))) {\n'
-             '            /* BCHD has no wallet; derive scriptPubKey from the CashAddr address */\n'
+             '            /* BCHD has no wallet; derive scriptPubKey from address format directly.\n'
+             '             * Try CashAddr (bitcoincash:q.../p...) then legacy Base58Check (1.../3...) */\n'
              '            int calen_ = cashaddr_to_scriptpubkey_(address, (unsigned char *)cscript_out, *cscript_len);\n'
-             '            if (!calen_) {\n'
-             '                LOGWARNING("No scriptPubKey for %s and CashAddr decode failed -- skipping", address);\n'
-             '                goto out; /* ret stays false; caller skips this address (e.g. donation) */\n'
-             '            }\n'
+             '            if (!calen_)\n'
+             '                calen_ = base58check_to_scriptpubkey_(address, (unsigned char *)cscript_out, *cscript_len);\n'
+             '            if (!calen_)\n'
+             '                quit(1, "No scriptPubkey for %s: not a recognised address format", address);\n'
              '            *cscript_len = calen_;\n'
              '            ret = true;\n'
              '            goto out;\n'
