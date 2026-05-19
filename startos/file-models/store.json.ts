@@ -19,6 +19,7 @@ export const shape = z.object({
   manualRpcPassword: z.string().catch(''),
   nodeRpcUser: z.string().catch(''),
   nodeRpcPassword: z.string().catch(''),
+  disableDevDonation: z.boolean().catch(false),
 })
 
 export const storeJson = FileHelper.json(

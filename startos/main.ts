@@ -10,6 +10,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const poolFee = store?.poolFee ?? 1
   const poolIdentifier = store?.poolIdentifier ?? 'ASICSeer'
   const poolDifficulty = store?.poolDifficulty ?? 64
+  const disableDevDonation = store?.disableDevDonation ?? false
   const nodePackageId = store?.nodePackageId ?? 'bitcoincashd'
 
   const nodeAddressMode = store?.nodeAddressMode ?? 'auto'
@@ -234,6 +235,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         maxdiff: 0,
         logdir: `${rootDir}/pool/log`,
         pool_fee: poolFee,
+        ...(disableDevDonation ? { disable_dev_donation: true } : {}),
       },
       null,
       2,
@@ -261,6 +263,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
         maxdiff: 0,
         logdir: `${rootDir}/solo/log`,
         pool_fee: 0,
+        ...(disableDevDonation ? { disable_dev_donation: true } : {}),
       },
       null,
       2,

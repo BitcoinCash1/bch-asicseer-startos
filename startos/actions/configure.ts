@@ -108,6 +108,14 @@ const configSpec = sdk.InputSpec.of({
     integer: true,
     units: null,
   }),
+  disableDevDonation: sdk.Value.toggle({
+    name: 'Disable Developer Donation',
+    description:
+      'ASICSeer upstream includes an optional developer donation: 10% of the pool fee is split between the ASICSeer developer (Calin Culianu) and the BCHN project. ' +
+      'This toggle is provided natively by the developer himself via the disable_dev_donation config key. ' +
+      'When off (default), the donation is active. When on, the full pool fee goes to your payout address.',
+    default: false,
+  }),
   rpcAuthMode: sdk.Value.select({
     name: 'RPC Credentials Source',
     description:
@@ -161,6 +169,7 @@ export const configure = sdk.Action.withInput(
       poolFee: store?.poolFee ?? 1,
       poolIdentifier: store?.poolIdentifier ?? 'ASICSeer',
       poolDifficulty: store?.poolDifficulty ?? 64,
+      disableDevDonation: store?.disableDevDonation ?? false,
       nodeAddressMode: store?.nodeAddressMode ?? 'auto',
       customNodeHost: store?.customNodeHost ?? '',
       customNodePort: store?.customNodePort ?? 8332,
@@ -179,6 +188,7 @@ export const configure = sdk.Action.withInput(
       poolFee: input.poolFee,
       poolIdentifier: input.poolIdentifier,
       poolDifficulty: input.poolDifficulty,
+      disableDevDonation: input.disableDevDonation,
       nodeAddressMode: input.nodeAddressMode,
       customNodeHost: input.customNodeHost ?? '',
       customNodePort: input.customNodePort,
