@@ -325,9 +325,8 @@
     var badge = el('worker-count-badge')
     var defaultEmptyText = 'No miners connected yet. Point your ASIC at the stratum URL above to get started.'
 
-    var activeWorkers = allWorkers.filter(function (w) {
-      return workerStatus(w) !== 'dead'
-    })
+    // Show all workers including dead ones so the delete button is accessible.
+    var activeWorkers = allWorkers
 
     badge.textContent = totalConnected + ' connected'
 
@@ -405,6 +404,8 @@
       html += '<td>' + lastShare + '</td>'
       html += '<td><span class="status-dot ' + status + '"></span>'
       html += statusLabel + '</td>'
+      var addrForDelete = (w.worker || w.user || '').split('.')[0]
+      html += '<td><button class="delete-btn" data-address="' + escapeHtml(addrForDelete) + '" data-mode="' + escapeHtml(w._mode) + '" title="Remove worker from stats">Delete</button></td>'
       html += '</tr>'
     }
 
@@ -614,6 +615,35 @@
     grad.appendChild(s2)
     defs.appendChild(grad)
     svg.insertBefore(defs, svg.firstChild)
+  }
+
+  // Delete button — event delegation on the workers tbody
+  var workersTbody = document.getElementById('workers-tbody')
+  if (workersTbody) {
+    workersTbody.addEventListener('click', function (e) {
+      var btn = e.target
+      if (!btn || btn.className.indexOf('delete-btn') < 0) return
+      var address = btn.getAttribute('data-address')
+      var mode    = btn.getAttribute('data-mode')
+      if (!address || !mode) return
+      btn.disabled = true
+      btn.textContent = '...'
+      fetch('/api/delete-worker?address=' + encodeURIComponent(address) + '&mode=' + encodeURIComponent(mode), { method: 'POST' })
+        .then(function (res) { return res.json() })
+        .then(function (data) {
+          if (data.ok) {
+            var row = btn.parentNode && btn.parentNode.parentNode
+            if (row) row.parentNode.removeChild(row)
+          } else {
+            btn.disabled = false
+            btn.textContent = 'Delete'
+          }
+        })
+        .catch(function () {
+          btn.disabled = false
+          btn.textContent = 'Delete'
+        })
+    })
   }
 
   tick()

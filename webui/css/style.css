@@ -434,6 +434,25 @@ footer a:hover {
 .status-dot.idle  { background: #d29922; box-shadow: 0 0 6px rgba(210,153,34,0.4); }
 .status-dot.dead  { background: #f85149; box-shadow: 0 0 6px rgba(248,81,73,0.4); }
 
+.delete-btn {
+  background: transparent;
+  border: 1px solid rgba(248,81,73,0.4);
+  color: #f85149;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.delete-btn:hover:not(:disabled) {
+  background: rgba(248,81,73,0.15);
+  border-color: #f85149;
+}
+.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 600px) {
   .cards {
     grid-template-columns: 1fr;

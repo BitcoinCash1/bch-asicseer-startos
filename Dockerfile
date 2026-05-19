@@ -52,6 +52,9 @@ COPY assets/nginx.conf /etc/nginx/sites-available/default
 COPY assets/stats-api.sh /usr/local/bin/stats-api.sh
 RUN chmod +x /usr/local/bin/stats-api.sh
 
+# Delete-worker API handler
+COPY assets/delete-worker.js /usr/local/bin/delete-worker.js
+
 # Pool/solo daemon entrypoint (runs stats-writer alongside asicseer)
 COPY assets/pool-entrypoint.sh /usr/local/bin/pool-entrypoint.sh
 RUN chmod +x /usr/local/bin/pool-entrypoint.sh
