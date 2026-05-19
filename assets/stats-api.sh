@@ -166,6 +166,22 @@ read_workers_data() {
     for FILE in "$UDIR"/*; do
       [ -f "$FILE" ] || continue
 
+      # Tombstone check: skip workers deleted via the UI until they reconnect.
+      # The pool daemon rewrites user files from memory even after deletion, so
+      # we use a .tomb.<addr> marker. If lastshare <= tombstone time the worker
+      # hasn't submitted a new share since deletion — suppress it. When lastshare
+      # advances past the tombstone the miner reconnected; clear the tombstone.
+      ADDR=$(basename "$FILE")
+      TOMB="$UDIR/.tomb.$ADDR"
+      if [ -f "$TOMB" ]; then
+        TOMB_TS=$(tr -cd '0-9' < "$TOMB" 2>/dev/null)
+        MAX_LS=$(jq -r '[(.worker // .workers // [])[].lastshare // 0] | if length == 0 then 0 else max end' "$FILE" 2>/dev/null || echo 0)
+        if [ -n "$TOMB_TS" ] && [ "${MAX_LS:-0}" -le "${TOMB_TS:-0}" ] 2>/dev/null; then
+          continue
+        fi
+        rm -f "$TOMB"
+      fi
+
       PARSED=$(jq -c --argjson now "$NOW" --argjson diffmap "$DIFF_MAP" --argjson accmap "$ACCEPT_MAP" --argjson rejmap "$REJECT_MAP" "$JQ_DEFS"'
         [((.worker // .workers // []))[] |
           ((.lastshare // 0) as $ls |

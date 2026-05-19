@@ -1,6 +1,7 @@
 'use strict'
 // Tiny HTTP server: handles POST /api/delete-worker?address=<addr>&mode=pool|solo
-// Deletes the per-user stats file so the worker disappears from the dashboard.
+// Writes a tombstone so stats-api.sh suppresses the worker even after the pool
+// daemon recreates the user file from its in-memory state.
 // Listens on 127.0.0.1:8181 only; nginx proxies /api/delete-worker to it.
 var http = require('http')
 var fs   = require('fs')
@@ -50,21 +51,29 @@ http.createServer(function (req, res) {
   }
 
   // path.basename strips any directory traversal attempts
-  var safeAddr = path.basename(address)
-  var filePath = '/data/' + mode + '/log/users/' + safeAddr
+  var safeAddr  = path.basename(address)
+  var filePath  = '/data/' + mode + '/log/users/' + safeAddr
+  var tombPath  = '/data/' + mode + '/log/users/.tomb.' + safeAddr
+  var nowSec    = Math.floor(Date.now() / 1000)
 
-  fs.unlink(filePath, function (err) {
-    if (err && err.code === 'ENOENT') {
-      res.writeHead(404)
-      res.end(JSON.stringify({ ok: false, error: 'Worker not found' }))
-      return
-    }
-    if (err) {
+  // Write tombstone first — stats-api.sh checks this to suppress the worker
+  // even after the pool daemon rewrites the user file from its in-memory state.
+  // The tombstone is cleared automatically when lastshare advances past it.
+  fs.writeFile(tombPath, String(nowSec), function (tombErr) {
+    if (tombErr) {
       res.writeHead(500)
-      res.end(JSON.stringify({ ok: false, error: err.message }))
+      res.end(JSON.stringify({ ok: false, error: 'Could not write tombstone: ' + tombErr.message }))
       return
     }
-    res.writeHead(200)
-    res.end(JSON.stringify({ ok: true, address: address, mode: mode }))
+    // Also delete the user file (best-effort; daemon may recreate it)
+    fs.unlink(filePath, function (unlinkErr) {
+      if (unlinkErr && unlinkErr.code !== 'ENOENT') {
+        res.writeHead(500)
+        res.end(JSON.stringify({ ok: false, error: unlinkErr.message }))
+        return
+      }
+      res.writeHead(200)
+      res.end(JSON.stringify({ ok: true, address: address, mode: mode }))
+    })
   })
 }).listen(8181, '127.0.0.1')
