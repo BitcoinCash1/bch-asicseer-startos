@@ -200,7 +200,7 @@
     var connected = getConnectedCount(data)
 
     el(prefix + '-hashrate').textContent = formatHashrate(
-      stats.hashrate5m || stats.hashrate1m || stats.hashrate
+      stats.hashrate1hr || stats.hashrate5m || stats.hashrate1m || stats.hashrate
     )
     el(prefix + '-workers').textContent = formatNumber(connected)
     // FIX: don't fall back to stats.accepted here — that field is cumulative
@@ -283,10 +283,10 @@
     var poolHr = 0
     var soloHr = 0
     if (poolData && poolData.stats) {
-      poolHr = Number(poolData.stats.hashrate5m || poolData.stats.hashrate1m || 0)
+      poolHr = Number(poolData.stats.hashrate1hr || poolData.stats.hashrate5m || poolData.stats.hashrate1m || 0)
     }
     if (soloData && soloData.stats) {
-      soloHr = Number(soloData.stats.hashrate5m || soloData.stats.hashrate1m || 0)
+      soloHr = Number(soloData.stats.hashrate1hr || soloData.stats.hashrate5m || soloData.stats.hashrate1m || 0)
     }
     var totalHr = poolHr + soloHr
 
