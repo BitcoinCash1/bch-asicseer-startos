@@ -17,6 +17,10 @@ RPC_TARGET=$(jq -r '.btcd[0].url // empty' "$CONF" 2>/dev/null)
 RPC_USER=$(jq -r '.btcd[0].auth // empty' "$CONF" 2>/dev/null)
 RPC_PASS=$(jq -r '.btcd[0].pass // empty' "$CONF" 2>/dev/null)
 
+# Clear sharelog state so worker difficulty always resets from startdiff on restart.
+# Prevents stale high-difficulty entries from causing miners to appear Idle after restart.
+rm -rf /data/${MODE}/log/???????? /data/${MODE}/log/clients.json 2>/dev/null
+
 # Clean stale socket directory from previous runs
 rm -rf "/tmp/${MODE}" 2>/dev/null
 
