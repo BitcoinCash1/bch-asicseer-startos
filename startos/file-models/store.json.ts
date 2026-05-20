@@ -8,6 +8,7 @@ export const shape = z.object({
   poolFee: z.number().catch(1),
   poolIdentifier: z.string().catch('ASICSeer'),
   poolDifficulty: z.number().catch(64),
+  maxDiff: z.number().catch(2147483648),
   nodeAddressMode: z.enum(['auto', 'custom']).catch('auto'),
   customNodeHost: z.string().catch(''),
   customNodePort: z.number().catch(8332),

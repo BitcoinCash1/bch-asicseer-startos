@@ -46,6 +46,17 @@ const configSpec = sdk.InputSpec.of({
     integer: true,
     units: null,
   }),
+  maxDiff: sdk.Value.number({
+    name: 'Maximum Share Difficulty',
+    description:
+      'Hard ceiling on per-miner share difficulty. Vardiff adjusts difficulty automatically within this limit. The default (2147483648) is high enough to never be hit for any realistic home or farm setup. Only raise this value if you see shares flooding in suspiciously fast, which would indicate the ceiling has been reached.',
+    required: true,
+    default: 2147483648,
+    min: 1024,
+    max: 9007199254740991,
+    integer: true,
+    units: null,
+  }),
   nodeAddressMode: sdk.Value.select({
     name: 'Node Address Source',
     description:
@@ -169,6 +180,7 @@ export const configure = sdk.Action.withInput(
       poolFee: store?.poolFee ?? 1,
       poolIdentifier: store?.poolIdentifier ?? 'ASICSeer',
       poolDifficulty: store?.poolDifficulty ?? 64,
+      maxDiff: store?.maxDiff ?? 2147483648,
       disableDevDonation: store?.disableDevDonation ?? false,
       nodeAddressMode: store?.nodeAddressMode ?? 'auto',
       customNodeHost: store?.customNodeHost ?? '',
@@ -188,6 +200,7 @@ export const configure = sdk.Action.withInput(
       poolFee: input.poolFee,
       poolIdentifier: input.poolIdentifier,
       poolDifficulty: input.poolDifficulty,
+      maxDiff: input.maxDiff,
       disableDevDonation: input.disableDevDonation,
       nodeAddressMode: input.nodeAddressMode,
       customNodeHost: input.customNodeHost ?? '',
