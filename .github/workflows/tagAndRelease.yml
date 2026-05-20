@@ -2,11 +2,16 @@ name: Tag and Release
 
 on:
   push:
-    branches: ['master']
-    paths-ignore: ['README.md']
+    branches: [master]
+    paths-ignore: ['README.md', 'Dockerfile.binary', 'patches/**', 'asicseer-src']
+  workflow_run:
+    workflows: ['Build Binary Image']
+    types: [completed]
+    branches: [master]
 
 permissions:
   contents: write
+  packages: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,6 +19,9 @@ concurrency:
 
 jobs:
   release:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Setup build environment
@@ -32,6 +40,17 @@ jobs:
           else
             start-cli init-key
           fi
+        shell: bash
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull asicseer binary image
+        run: docker pull ghcr.io/bitcoincash1/asicseer-bchd:latest
         shell: bash
 
       - name: Build service packages

@@ -1,0 +1,44 @@
+name: Build Binary Image
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'Dockerfile.binary'
+      - 'patches/**'
+      - 'asicseer-src'
+  workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push asicseer binary image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.binary
+          push: true
+          tags: |
+            ghcr.io/bitcoincash1/asicseer-bchd:latest
+            ghcr.io/bitcoincash1/asicseer-bchd:${{ github.sha }}
