@@ -69,8 +69,6 @@ jobs:
 
       - name: Move release tags to current commit
         run: |
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
           git tag -f "${{ steps.meta.outputs.vtag }}"
           git push origin -f "${{ steps.meta.outputs.vtag }}"
 
