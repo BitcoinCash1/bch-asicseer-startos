@@ -8,6 +8,7 @@ on:
     workflows: ['Build Binary Image']
     types: [completed]
     branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: write
