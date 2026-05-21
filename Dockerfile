@@ -9,10 +9,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # ASICSeer binaries (pre-built, BCHD-patched — see Dockerfile.binary)
-COPY --from=ghcr.io/bitcoincash1/asicseer-bchd:latest /build/asicseer/out/src/asicseer-pool /usr/local/bin/asicseer
-COPY --from=ghcr.io/bitcoincash1/asicseer-bchd:latest /build/asicseer/out/src/asicseer-pmsg /usr/local/bin/ckpmsg
-COPY --from=ghcr.io/bitcoincash1/asicseer-bchd:latest /build/asicseer/out/src/notifier /usr/local/bin/notifier
-COPY --from=ghcr.io/bitcoincash1/asicseer-bchd:latest /build/asicseer/out/src/summariser /usr/local/bin/summariser
+COPY --from=ghcr.io/bitcoincash1/asicseer-bch:latest /build/asicseer/out/src/asicseer-pool /usr/local/bin/asicseer
+COPY --from=ghcr.io/bitcoincash1/asicseer-bch:latest /build/asicseer/out/src/asicseer-pmsg /usr/local/bin/ckpmsg
+COPY --from=ghcr.io/bitcoincash1/asicseer-bch:latest /build/asicseer/out/src/notifier /usr/local/bin/notifier
+COPY --from=ghcr.io/bitcoincash1/asicseer-bch:latest /build/asicseer/out/src/summariser /usr/local/bin/summariser
 
 # WebUI static files
 COPY webui/ /var/www/html/
