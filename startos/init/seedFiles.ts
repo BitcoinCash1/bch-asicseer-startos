@@ -10,7 +10,7 @@ export const seedFiles = sdk.setupOnInit(async (effects, kind) => {
     payoutAddress: '',
     poolFee: 1,
     poolIdentifier: 'ASICSeer',
-    poolDifficulty: 64,
+    poolDifficulty: 42,
     nodeRpcUser: '',
     nodeRpcPassword: '',
   })
