@@ -52,7 +52,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull asicseer binary image
-        run: docker pull ghcr.io/bitcoincash1/asicseer-bchd:latest
+        run: docker pull ghcr.io/bitcoincash1/asicseer-bch:latest
         shell: bash
 
       - name: Build service packages

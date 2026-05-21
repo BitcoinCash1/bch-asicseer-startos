@@ -4,6 +4,9 @@
 
 # ASICSeer for StartOS
 
+> **⚠ BCHD Patched Build**
+> The pool binary (`asicseer-pool`) shipped in this package is **patched for compatibility with [BCHD](https://github.com/gcash/bchd)**. Standard asicseer-pool does not support BCHD's JSON-RPC dialect. Do not replace this binary with an unpatched upstream build.
+
 <p align="center">
   <img src="https://img.shields.io/badge/platform-StartOS-brightgreen" alt="StartOS">
   <img src="https://img.shields.io/badge/architecture-x86__64%20%7C%20aarch64-blue" alt="Architecture">
