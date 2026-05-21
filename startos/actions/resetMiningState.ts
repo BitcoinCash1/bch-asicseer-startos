@@ -4,7 +4,7 @@ export const resetMiningState = sdk.Action.withoutInput(
   'reset-mining-state',
 
   async ({ effects: _effects }) => ({
-    name: 'Reset Mining State',
+    name: 'Wipe Mining State',
     description:
       'Clears all sharelog data and restarts the pool. Use this if a miner is stuck showing Idle or stale statistics. On restart, all miners reconnect at the configured starting difficulty and vardiff adjusts naturally from there.',
     warning:
