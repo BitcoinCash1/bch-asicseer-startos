@@ -3,7 +3,7 @@ name: Tag and Release
 on:
   push:
     branches: [master]
-    paths-ignore: ['README.md', 'Dockerfile.binary', 'patches/**', 'asicseer-src']
+    paths-ignore: ['*.md', 'Dockerfile.binary', 'patches/**', 'asicseer-src']
   workflow_run:
     workflows: ['Build Binary Image']
     types: [completed]

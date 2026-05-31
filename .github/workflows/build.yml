@@ -14,5 +14,7 @@ jobs:
   build:
     if: github.event.pull_request.draft == false
     uses: start9labs/shared-workflows/.github/workflows/build.yml@master
+    # with:
+    #   FREE_DISK_SPACE: true
     secrets:
       DEV_KEY: ${{ secrets.DEV_KEY }}
