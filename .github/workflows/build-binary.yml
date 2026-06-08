@@ -42,3 +42,5 @@ jobs:
           tags: |
             ghcr.io/bitcoincash1/asicseer-bch:latest
             ghcr.io/bitcoincash1/asicseer-bch:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/BitcoinCash1/bch-asicseer-startos
