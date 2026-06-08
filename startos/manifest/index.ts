@@ -9,7 +9,7 @@ export const manifest = setupManifest({
   marketingUrl: 'https://github.com/cculianu/asicseer-pool',
   donationUrl: null,
   docsUrls: [
-    'https://github.com/BitcoinCash1/bch-asicseer-startos/blob/master/README.md',
+    'https://github.com/BitcoinCash1/bch-asicseer-startos/blob/master/instructions.md',
     'https://github.com/cculianu/asicseer-pool',
   ],
   description: {
