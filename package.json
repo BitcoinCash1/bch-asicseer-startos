@@ -6,7 +6,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@start9labs/start-sdk": "^1.2.1",
+    "@start9labs/start-sdk": "1.5.3",
     "bitcoin-cash-node-startos": "file:../bitcoin-cash-node-startos",
     "bitcoin-cash-daemon-startos": "file:../bitcoin-cash-daemon-startos",
     "flowee-startos": "file:../flowee-startos"
