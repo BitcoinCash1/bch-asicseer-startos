@@ -243,6 +243,19 @@
     }
   }
 
+  function networkLabel(chain) {
+    var k = String(chain || '').toLowerCase()
+    var map = {
+      main: 'Mainnet', mainnet: 'Mainnet',
+      test: 'Testnet3', test3: 'Testnet3', testnet3: 'Testnet3',
+      test4: 'Testnet4', testnet4: 'Testnet4',
+      chip: 'Chipnet', chipnet: 'Chipnet',
+      scale: 'Scalenet', scalenet: 'Scalenet',
+      reg: 'Regtest', regtest: 'Regtest',
+    }
+    return map[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : '—')
+  }
+
   function updateBlockchain(data) {
     if (!data) return
 
@@ -272,6 +285,16 @@
     var subver = net.subversion || ''
     var chain = bc.chain || 'main'
     el('sync-sub').textContent = chain + ' | ' + subver
+
+    // Prominent network badge so the (much smaller) chipnet/testnet figures
+    // aren't mistaken for mainnet.
+    var netBadge = el('net-badge')
+    if (netBadge) {
+      var nkey = String(chain).toLowerCase()
+      netBadge.textContent = networkLabel(nkey)
+      netBadge.className =
+        'net-badge' + (nkey === 'main' || nkey === 'mainnet' ? '' : ' testnet')
+    }
 
     el('node-blocks').textContent = formatNumber(bc.blocks)
     el('node-headers').textContent = formatNumber(bc.headers)
