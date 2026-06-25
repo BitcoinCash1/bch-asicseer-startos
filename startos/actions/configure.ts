@@ -5,13 +5,22 @@ const configSpec = sdk.InputSpec.of({
   payoutAddress: sdk.Value.text({
     name: 'Payout Address',
     description:
-      'Your BCH address for receiving mining rewards. Used as the coinbase output address.',
+      'Your BCH address for receiving mining rewards. Used as the coinbase output address. ' +
+      'Must match the selected node\'s network — mainnet uses bitcoincash:, testnets/chipnet use bchtest:, regtest uses bchreg:. A wrong-network address is rejected at startup.',
     required: true,
     default: null,
     placeholder: 'bitcoincash:qr...',
     masked: false,
     minLength: 20,
     maxLength: 120,
+    patterns: [
+      {
+        regex:
+          '^((bitcoincash|bchtest|bchreg):)?[qpQP][a-zA-Z0-9]{41}$|^[123mn][a-km-zA-HJ-NP-Z1-9]{25,34}$',
+        description:
+          'Enter a valid BCH address — cashaddr (e.g. bitcoincash:q… / bchtest:q…) or legacy. The network is checked against the node when the service starts.',
+      },
+    ],
   }),
   poolFee: sdk.Value.number({
     name: 'Pool Fee (%)',

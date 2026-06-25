@@ -226,6 +226,36 @@ export const main = sdk.setupMain(async ({ effects }) => {
     )
   }
 
+  // ── Guard: payout address must be valid for the node's network ────
+  // The pool detects the network from the node dependency, so we ask the
+  // node's own validateaddress RPC — it accepts only addresses for its
+  // network (mainnet -> bitcoincash:, testnets -> bchtest:, regtest ->
+  // bchreg:). A wrong-network address is otherwise silently rejected by
+  // asicseer-pool ("Invalid bchaddress" -> "No bitcoinds active" -> no work
+  // served), so fail fast here with a clear message instead of a dead pool.
+  {
+    const vaRes = await rpcCall('validateaddress', [payoutAddress])
+    let addrValid: boolean | null = null
+    try {
+      addrValid = JSON.parse(vaRes.stdout.toString())?.result?.isvalid ?? null
+    } catch {
+      addrValid = null
+    }
+    if (addrValid === false) {
+      const want =
+        nodeNetwork === 'mainnet'
+          ? 'a mainnet (bitcoincash:) address'
+          : nodeNetwork === 'regtest'
+            ? 'a regtest (bchreg:) address'
+            : 'a testnet/chipnet (bchtest:) address'
+      throw new Error(
+        `Payout address "${payoutAddress}" is not valid on the node's network (${nodeNetwork}). Open Configure and set ${want}.`,
+      )
+    }
+    // addrValid === null: validateaddress was inconclusive (RPC hiccup) —
+    // don't block startup on it.
+  }
+
   // ── Wipe stale mining stats on request or after a network change ──
   // asicseer-pool persists cumulative stats (accounted_diff_shares, best_diff,
   // hashrate averages) to {logdir}/pool/pool.status and reloads them on every
@@ -353,6 +383,41 @@ export const main = sdk.setupMain(async ({ effects }) => {
     }
   })().catch(() => {})
 
+  // Health that reflects whether the pool can actually serve work, not just
+  // whether the port is open. asicseer-pool can hold the stratum port open
+  // while unable to build work (wrong payout address, node unreachable) —
+  // surface that as a failure instead of a misleading green.
+  const miningReady =
+    (sub: typeof poolSub, mode: 'pool' | 'solo', port: number, label: string) =>
+    async () => {
+      try {
+        const res = await sub.exec([
+          'sh',
+          '-c',
+          `tail -n 20 ${rootDir}/${mode}/log/*.log 2>/dev/null`,
+        ])
+        const log = res.stdout?.toString() ?? ''
+        if (/invalid b(tc|ch)address/i.test(log)) {
+          return {
+            result: 'failure' as const,
+            message: `${label}: payout address rejected by the node — open Configure and set a valid address for this network (${nodeNetwork}).`,
+          }
+        }
+        if (/No bitcoinds active/i.test(log)) {
+          return {
+            result: 'failure' as const,
+            message: `${label}: cannot get work from the node (No bitcoinds active) — check the node connection.`,
+          }
+        }
+      } catch {
+        // fall through to the port check
+      }
+      return sdk.healthCheck.checkPortListening(effects, port, {
+        successMessage: `${label} stratum ready on port ${port} [${nodeNetwork}]`,
+        errorMessage: `${label} stratum starting...`,
+      })
+    }
+
   // ── Daemons ──────────────────────────────────────────────────────
   return sdk.Daemons.of(effects)
     .addDaemon('pool', {
@@ -367,11 +432,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       },
       ready: {
         display: 'Pool Mining',
-        fn: async () =>
-          sdk.healthCheck.checkPortListening(effects, poolPort, {
-            successMessage: `Pool mining stratum ready on port ${poolPort} [${nodeNetwork}]`,
-            errorMessage: 'Pool mining stratum starting...',
-          }),
+        fn: miningReady(poolSub, 'pool', poolPort, 'Pool mining'),
       },
       requires: [],
     })
@@ -387,11 +448,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       },
       ready: {
         display: 'Solo Mining',
-        fn: async () =>
-          sdk.healthCheck.checkPortListening(effects, soloPort, {
-            successMessage: `Solo mining stratum ready on port ${soloPort} [${nodeNetwork}]`,
-            errorMessage: 'Solo mining stratum starting...',
-          }),
+        fn: miningReady(soloSub, 'solo', soloPort, 'Solo mining'),
       },
       requires: [],
     })
