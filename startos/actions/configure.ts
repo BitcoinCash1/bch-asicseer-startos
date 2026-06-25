@@ -199,6 +199,10 @@ export const configure = sdk.Action.withInput(
       manualRpcUser: input.manualRpcUser ?? '',
       manualRpcPassword: input.manualRpcPassword ?? '',
     })
+    // Pool settings live in store.json, which main.ts reads with .once() (not
+    // reactive). Restart so the new payout address / fee / node target are
+    // written into the asicseer config and picked up by the running daemons.
+    await effects.restart()
     return null
   },
 )

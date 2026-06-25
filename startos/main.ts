@@ -6,7 +6,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
   console.log('Starting ASICSeer!')
 
   const store = await storeJson.read().once()
-  const payoutAddress = store?.payoutAddress ?? ''
+  const payoutAddress = (store?.payoutAddress ?? '').trim()
   const poolFee = store?.poolFee ?? 1
   const poolIdentifier = store?.poolIdentifier ?? 'ASICSeer'
   const poolDifficulty = store?.poolDifficulty ?? 42
@@ -41,6 +41,16 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const rpcAuthMode = store?.rpcAuthMode ?? 'auto'
   const manualRpcUser = (store?.manualRpcUser ?? '').trim()
   const manualRpcPassword = store?.manualRpcPassword ?? ''
+
+  // Refuse to start without a payout address. Previously an empty address
+  // silently fell back to a hardcoded default (the genesis-block coinbase
+  // address), which would send any found block's reward to an unspendable
+  // address. Fail loudly instead so the user sets their own address first.
+  if (!payoutAddress) {
+    throw new Error(
+      'No payout address configured. Open Configure and set your BCH Payout Address before starting — refusing to start to avoid sending mining rewards to an unspendable default address.',
+    )
+  }
 
   // ── Mounts ───────────────────────────────────────────────────────
   const mounts = sdk.Mounts.of()
@@ -120,9 +130,10 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
 
   // Finalise nodePort now that nodeNetwork is known.
+  // BCHN and Flowee both remap RPC port per network; BCHD always uses 8334.
   if (nodeAddressMode !== 'custom' || !(Number.isFinite(customNodePort) && customNodePort > 0)) {
     nodePort = nodePackageId === 'bchd' ? 8334
-      : nodePackageId === 'bitcoincashd' ? (bitcoincashdRpcPorts[nodeNetwork] ?? 8332)
+      : (nodePackageId === 'bitcoincashd' || nodePackageId === 'flowee') ? (bitcoincashdRpcPorts[nodeNetwork] ?? 8332)
       : 8332
   }
 
@@ -215,9 +226,31 @@ export const main = sdk.setupMain(async ({ effects }) => {
     )
   }
 
+  // ── Wipe stale mining stats on request or after a network change ──
+  // asicseer-pool persists cumulative stats (accounted_diff_shares, best_diff,
+  // hashrate averages) to {logdir}/pool/pool.status and reloads them on every
+  // restart, so a plain restart never clears them. Wipe the log trees when the
+  // user runs "Wipe Mining State" (wipePending) or when the node's network
+  // changed since the last start — stats from another network are meaningless
+  // and make round-progress explode (e.g. mainnet shares / chipnet difficulty).
+  const lastNetwork = store?.lastNetwork ?? ''
+  const wipePending = store?.wipePending ?? false
+  if (wipePending || (lastNetwork && lastNetwork !== nodeNetwork)) {
+    console.log(
+      `[wipe] clearing mining stats (wipePending=${wipePending}, lastNetwork=${lastNetwork || 'none'} -> ${nodeNetwork})`,
+    )
+    await poolSub.exec([
+      'sh',
+      '-c',
+      `rm -rf ${rootDir}/pool/log/* ${rootDir}/solo/log/* 2>/dev/null || true`,
+    ])
+  }
+
   await storeJson.merge(effects, {
     nodeRpcUser: rpcUser,
     nodeRpcPassword: rpcPassword,
+    wipePending: false,
+    lastNetwork: nodeNetwork,
   })
 
   // ── Write ckpool config files ────────────────────────────────────
@@ -236,7 +269,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
             notify: true,
           },
         ],
-        bchaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        bchaddress: payoutAddress,
         bchsig: `/${poolIdentifier}/`,
         blockpoll: 100,
         update_interval: 30,
@@ -264,7 +297,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
             notify: true,
           },
         ],
-        bchaddress: payoutAddress || '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        bchaddress: payoutAddress,
         bchsig: `/${poolIdentifier}-solo/`,
         blockpoll: 100,
         update_interval: 30,
@@ -365,7 +398,11 @@ export const main = sdk.setupMain(async ({ effects }) => {
     .addDaemon('ui', {
       subcontainer: uiSub,
       exec: {
-        command: ['ui-entrypoint.sh'],
+        // Inherit the same Tor proxy env as the pool/solo daemons so the
+        // stats-api.sh blockchain RPC polling honors Tor mode too (curl
+        // respects ALL_PROXY/HTTP_PROXY). Without this the dashboard's node
+        // panel would go blank when the node is only reachable over Tor.
+        command: ['sh', '-c', `${proxyPrefix}exec ui-entrypoint.sh`],
         sigtermTimeout: 10_000,
       },
       ready: {

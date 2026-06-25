@@ -1,4 +1,5 @@
 import { sdk } from '../sdk'
+import { storeJson } from '../file-models/store.json'
 
 export const resetMiningState = sdk.Action.withoutInput(
   'reset-mining-state',
@@ -15,6 +16,11 @@ export const resetMiningState = sdk.Action.withoutInput(
   }),
 
   async ({ effects }) => {
+    // Flag the wipe; main.ts deletes the persisted pool stats on the next start
+    // BEFORE the daemons relaunch. A bare restart is not enough — asicseer-pool
+    // reloads accounted_diff_shares/best_diff/hashrates from
+    // {logdir}/pool/pool.status, so the old numbers would simply come back.
+    await storeJson.merge(effects, { wipePending: true })
     await effects.restart()
     return null
   },

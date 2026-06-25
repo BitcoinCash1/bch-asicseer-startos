@@ -46,5 +46,8 @@ export const selectNode = sdk.Action.withInput(
       nodePackageId: input.nodePackageId,
       nodeConfirmed: true,
     })
+    // nodePackageId is read .once() in main.ts; restart so the new node
+    // backend (host/port/dependency mount) takes effect immediately.
+    await effects.restart()
   },
 )
