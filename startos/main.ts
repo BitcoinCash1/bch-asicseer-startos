@@ -249,22 +249,30 @@ export const main = sdk.setupMain(async ({ effects }) => {
     )
   }
 
-  // ── Guard: payout address must be valid for the node's network ────
-  // The pool detects the network from the node dependency, so we ask the
-  // node's own validateaddress RPC — it accepts only addresses for its
-  // network (mainnet -> bitcoincash:, testnets -> bchtest:, regtest ->
-  // bchreg:). A wrong-network address is otherwise silently rejected by
-  // asicseer-pool ("Invalid bchaddress" -> "No bitcoinds active" -> no work
-  // served), so fail fast here with a clear message instead of a dead pool.
+  // ── Guard: payout address must match the node's network ───────────
+  // Determine the address's network from its CashAddr prefix — reliable and
+  // node-independent. We deliberately do NOT trust the node's validateaddress
+  // here: Flowee the Hub's validateaddress RPC is legacy-base58-only and
+  // returns isvalid=false for ANY cashaddr (verified), which would wrongly
+  // reject valid addresses. A genuine wrong-network address is still caught at
+  // runtime by the "invalid bchaddress" asicseer-pool log guard below.
   {
-    const vaRes = await rpcCall('validateaddress', [payoutAddress])
-    let addrValid: boolean | null = null
-    try {
-      addrValid = JSON.parse(vaRes.stdout.toString())?.result?.isvalid ?? null
-    } catch {
-      addrValid = null
-    }
-    if (addrValid === false) {
+    const addrLower = payoutAddress.trim().toLowerCase()
+    const addrNetClass =
+      addrLower.startsWith('bitcoincash:')
+        ? 'mainnet'
+        : addrLower.startsWith('bchtest:')
+          ? 'test'
+          : addrLower.startsWith('bchreg:')
+            ? 'regtest'
+            : null // prefix-less cashaddr / legacy — network not encoded, don't block
+    const nodeNetClass =
+      nodeNetwork === 'mainnet'
+        ? 'mainnet'
+        : nodeNetwork === 'regtest'
+          ? 'regtest'
+          : 'test' // testnet / testnet4 / scalenet / chipnet all use bchtest:
+    if (addrNetClass !== null && addrNetClass !== nodeNetClass) {
       const want =
         nodeNetwork === 'mainnet'
           ? 'a mainnet (bitcoincash:) address'
