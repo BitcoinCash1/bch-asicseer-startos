@@ -131,6 +131,36 @@ NEW_BLOCK = ('        if (!tmp_val || !(spk = json_string_value(tmp_val))) {\n'
              '            goto out;\n'
              '        }')
 
+OLD_ISVALID = ('    if (!json_is_true(valid_val)) {\n'
+               '        LOGDEBUG("Bitcoin address %s is NOT valid", address);\n'
+               '        goto out;\n'
+               '    }')
+
+NEW_ISVALID = ('    if (!json_is_true(valid_val)) {\n'
+               '        /* The node validateaddress is legacy-base58-only (e.g. Flowee the\n'
+               '         * Hub) and rejects cashaddr. Accept the address if we can derive a\n'
+               '         * scriptPubKey from it ourselves; otherwise it really is invalid. */\n'
+               '        unsigned char dscript_[40]; int dlen_ = (int)sizeof(dscript_);\n'
+               '        int dn_ = cashaddr_to_scriptpubkey_(address, dscript_, dlen_);\n'
+               '        if (!dn_) dn_ = base58check_to_scriptpubkey_(address, dscript_, dlen_);\n'
+               '        if (!dn_) {\n'
+               '            LOGDEBUG("Bitcoin address %s is NOT valid", address);\n'
+               '            goto out;\n'
+               '        }\n'
+               '        if (cscript_out && cscript_len) {\n'
+               '            if (dn_ > *cscript_len) {\n'
+               '                LOGERR("Not enough space for derived scriptPubkey");\n'
+               '                goto out;\n'
+               '            }\n'
+               '            memcpy(cscript_out, dscript_, dn_);\n'
+               '            *cscript_len = dn_;\n'
+               '        }\n'
+               '        if (is_p2sh)\n'
+               '            *is_p2sh = (dscript_[0] == 0xa9);\n'
+               '        ret = true;\n'
+               '        goto out;\n'
+               '    }')
+
 ANCHOR = 'bool validate_address('
 
 with open('src/bitcoin.c', 'r') as f:
@@ -144,10 +174,17 @@ if OLD_QUIT not in src:
     print('ERROR: scriptPubKey quit block not found in bitcoin.c', file=sys.stderr)
     sys.exit(1)
 
+if OLD_ISVALID not in src:
+    print('ERROR: isvalid block not found in bitcoin.c', file=sys.stderr)
+    sys.exit(1)
+
 # Insert helper before validate_address
 src = src.replace(ANCHOR, HELPER + ANCHOR)
 # Replace quit block with CashAddr fallback
 src = src.replace(OLD_QUIT, NEW_BLOCK)
+# Accept a derivable cashaddr/legacy address even when the node's (legacy-only)
+# validateaddress reports isvalid=false (e.g. Flowee the Hub rejects cashaddr).
+src = src.replace(OLD_ISVALID, NEW_ISVALID)
 
 with open('src/bitcoin.c', 'w') as f:
     f.write(src)
