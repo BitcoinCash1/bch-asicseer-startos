@@ -1,6 +1,7 @@
 import { sdk } from './sdk'
 import { poolPort, soloPort, uiPort, rootDir, nodeMountpoint } from './utils'
 import { storeJson } from './file-models/store.json'
+import { configure } from './actions/configure'
 
 export const main = sdk.setupMain(async ({ effects }) => {
   console.log('Starting ASICSeer!')
@@ -42,13 +43,35 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const manualRpcUser = (store?.manualRpcUser ?? '').trim()
   const manualRpcPassword = store?.manualRpcPassword ?? ''
 
+  // Surface payout-address problems as an actionable StartOS task (a card that
+  // links the user straight to Configure). Created ONLY when something is
+  // wrong, and cleared once the address is valid — no always-on task.
+  const flagPayoutTask = async (reason: string) => {
+    try {
+      await sdk.action.createOwnTask(effects, configure, 'critical', {
+        replayId: 'payout-address',
+        reason,
+      })
+    } catch (e) {
+      console.warn('could not create payout-address task:', e)
+    }
+  }
+  const clearPayoutTask = async () => {
+    try {
+      await sdk.action.clearTask(effects, 'payout-address')
+    } catch {}
+  }
+
   // Refuse to start without a payout address. Previously an empty address
   // silently fell back to a hardcoded default (the genesis-block coinbase
   // address), which would send any found block's reward to an unspendable
-  // address. Fail loudly instead so the user sets their own address first.
+  // address. Fail loudly (and raise a task) instead so the user sets one.
   if (!payoutAddress) {
+    await flagPayoutTask(
+      'Set your BCH payout address in Configure before the pool can mine.',
+    )
     throw new Error(
-      'No payout address configured. Open Configure and set your BCH Payout Address before starting — refusing to start to avoid sending mining rewards to an unspendable default address.',
+      'No payout address configured. Open Configure and set your BCH Payout Address before starting.',
     )
   }
 
@@ -248,12 +271,32 @@ export const main = sdk.setupMain(async ({ effects }) => {
           : nodeNetwork === 'regtest'
             ? 'a regtest (bchreg:) address'
             : 'a testnet/chipnet (bchtest:) address'
-      throw new Error(
-        `Payout address "${payoutAddress}" is not valid on the node's network (${nodeNetwork}). Open Configure and set ${want}.`,
+      await flagPayoutTask(
+        `Your payout address is not valid on the node's network (${nodeNetwork}). Open Configure and set ${want}.`,
       )
+      // Park the service idle instead of throwing. A throwing setupMain
+      // crash-loops under StartOS auto-restart and leaks a subcontainer mount
+      // set every cycle, which can exhaust the mount namespace ("No space left
+      // on device"). The Task card + failing health check guide the user; the
+      // next restart after they fix the address re-runs main normally.
+      return sdk.Daemons.of(effects).addDaemon('payout-guard', {
+        subcontainer: poolSub,
+        exec: {
+          command: ['sh', '-c', 'while true; do sleep 3600; done'],
+          sigtermTimeout: 5_000,
+        },
+        ready: {
+          display: 'Pool Mining',
+          fn: async () => ({
+            result: 'failure' as const,
+            message: `Payout address is not valid on the node's network (${nodeNetwork}) — open Configure and set ${want}.`,
+          }),
+        },
+        requires: [],
+      })
     }
-    // addrValid === null: validateaddress was inconclusive (RPC hiccup) —
-    // don't block startup on it.
+    // Valid (or inconclusive RPC): clear any prior payout-address task.
+    await clearPayoutTask()
   }
 
   // ── Wipe stale mining stats on request or after a network change ──

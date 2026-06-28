@@ -61,7 +61,7 @@ read_pool_stats() {
       users:       (.Users // .users // 0),
       accepted:    (.accepted // 0),
       rejected:    (.rejected // 0),
-      bestshare:   (.bestshare // 0),
+      bestshare:   (.bestshare_alltime // .bestshare // 0),
       runtime:     (.runtime // 0),
       diff:        ((.diff // "0") | if type == "string" then (tonumber // 0) else (. // 0) end),
       SolvedBlocks: '"$SOLVED"',
@@ -201,7 +201,7 @@ read_workers_data() {
             accepted_count: $acount,
             rejected:       $rej,
             current_diff:   $cdiff,
-            bestdiff:       (.bestshare // 0),
+            bestdiff:       (.bestshare_alltime // .bestshare // 0),
             lastshare:      $ls,
             idle:           ($status != "alive"),
             status:         $status
