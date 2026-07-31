@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup build environment
-        uses: start9labs/shared-workflows/.github/actions/setup-build-env@master
+        uses: Start9Labs/start-technologies/.github/actions/setup-build-env@master
 
       - name: Checkout repository
         uses: actions/checkout@v5
