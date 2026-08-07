@@ -43,10 +43,10 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     } else if (nodePackageId === 'flowee') {
       // Flowee: ASICSeer uses JSON-RPC only — no autoconfig needed.
     } else if (nodePackageId === 'knuth-bch') {
-      // Knuth v1.3.0+ optional JSON-RPC. Force RPC on + full DB.
-      // Classic getblocktemplate/submitblock still missing upstream
-      // (only *light variants) — k-nuth/kth#616. Pool probe will fail
-      // on GBT until that lands; autoconfig still gets the node ready.
+      // Knuth v1.3.0: mempool + light mining RPC (getblocktemplatelight /
+      // submitblocklight). Force RPC on + full DB. ASICSeer still speaks
+      // classic getblocktemplate — protocol mismatch, not "no mining"
+      // (k-nuth/kth#616). Autoconfig still gets the node ready.
       await sdk.action.createTask(effects, 'knuth-bch', knuthAutoconfig, 'critical', {
         input: {
           kind: 'partial',

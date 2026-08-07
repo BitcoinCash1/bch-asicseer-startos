@@ -22,9 +22,11 @@ backends on StartOS:
 - **Bitcoin Cash Node (BCHN)** — recommended for mining
 - **Bitcoin Cash Daemon (BCHD)**
 - **Flowee the Hub**
-- **Knuth** (v1.3.0+) — JSON-RPC can be enabled, but classic `getblocktemplate` /
-  `submitblock` are not implemented yet (only light variants). Mining will fail
-  the GBT probe until [k-nuth/kth#616](https://github.com/k-nuth/kth/issues/616) lands.
+- **Knuth** (v1.3.0+) — has a real mining path (`getblocktemplatelight` /
+  `submitblocklight` / `getmininginfo`) with mempool-built templates. ASICSeer
+  still uses *classic* `getblocktemplate`/`submitblock`, so it will not mine
+  against Knuth until either the pool speaks the light protocol or Knuth adds
+  classic GBT aliases ([k-nuth/kth#616](https://github.com/k-nuth/kth/issues/616)).
 
 Select your node backend via **Actions → Select Node Backend**. The pool reads the
 node's RPC credentials automatically.
