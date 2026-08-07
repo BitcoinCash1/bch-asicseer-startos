@@ -22,7 +22,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
     nodeAddressMode === 'custom' && customNodeHost.length > 0
       ? customNodeHost
       : defaultNodeHost
-  // BCHN remaps its RPC port per network; other nodes always use 8332 (or 8334 for BCHD).
+  // BCHN, Flowee, and Knuth remap RPC port per network.
+  // BCHD plaintext bridge is always 8334 in this package.
   // nodeNetwork is updated after reading the dependency store.json; nodePort is finalised then.
   const bitcoincashdRpcPorts: Record<string, number> = {
     mainnet: 8332, testnet3: 18332, testnet4: 28342,
@@ -153,11 +154,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
   }
 
   // Finalise nodePort now that nodeNetwork is known.
-  // BCHN and Flowee both remap RPC port per network; BCHD always uses 8334.
+  // BCHN / Flowee / Knuth: per-network ports. BCHD: plaintext bridge 8334.
   if (nodeAddressMode !== 'custom' || !(Number.isFinite(customNodePort) && customNodePort > 0)) {
-    nodePort = nodePackageId === 'bchd' ? 8334
-      : (nodePackageId === 'bitcoincashd' || nodePackageId === 'flowee') ? (bitcoincashdRpcPorts[nodeNetwork] ?? 8332)
-      : 8332
+    nodePort =
+      nodePackageId === 'bchd'
+        ? 8334
+        : (bitcoincashdRpcPorts[nodeNetwork] ?? 8332) // bitcoincashd | flowee | knuth-bch
   }
 
   if (!rpcPassword) {
@@ -215,7 +217,16 @@ export const main = sdk.setupMain(async ({ effects }) => {
       }
 
       lastProbeFailure = `RPC returned non-success JSON (infoExit=${infoResult.exitCode}, gbtExit=${gbtResult.exitCode})`
-      if (gbtBody.includes('403') || infoBody.includes('403')) {
+      if (
+        gbtBody.includes('Method not found') ||
+        gbtBody.includes('method not found') ||
+        gbtBody.includes('-32601')
+      ) {
+        lastProbeFailure =
+          nodePackageId === 'knuth-bch'
+            ? 'Knuth JSON-RPC is up but lacks classic getblocktemplate (only getblocktemplatelight). Tracked upstream: k-nuth/kth#616.'
+            : 'Node rejected getblocktemplate (method not found). Mining needs full GBT RPC.'
+      } else if (gbtBody.includes('403') || infoBody.includes('403')) {
         lastProbeFailure =
           'HTTP 403 Forbidden from node RPC. Check rpcuser/rpcpassword and node RPC access controls.'
       }

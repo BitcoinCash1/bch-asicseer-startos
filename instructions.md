@@ -19,11 +19,12 @@ supports dual-mode operation — **pool mining** (proportional shared rewards) a
 ASICSeer requires a running and fully-synced Bitcoin Cash full node. Supported node
 backends on StartOS:
 
-- **Bitcoin Cash Node (BCHN)**
+- **Bitcoin Cash Node (BCHN)** — recommended for mining
 - **Bitcoin Cash Daemon (BCHD)**
 - **Flowee the Hub**
-- **Knuth** — JSON-RPC is not yet available in the current upstream Knuth release;
-  selecting it will surface an RPC error until Knuth ships its built-in RPC module.
+- **Knuth** (v1.3.0+) — JSON-RPC can be enabled, but classic `getblocktemplate` /
+  `submitblock` are not implemented yet (only light variants). Mining will fail
+  the GBT probe until [k-nuth/kth#616](https://github.com/k-nuth/kth/issues/616) lands.
 
 Select your node backend via **Actions → Select Node Backend**. The pool reads the
 node's RPC credentials automatically.

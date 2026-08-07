@@ -1,5 +1,6 @@
 import { autoconfig as bchnAutoconfig } from 'bitcoin-cash-node-startos/startos/actions/config/autoconfig'
 import { autoconfig as bchdAutoconfig } from 'bitcoin-cash-daemon-startos/startos/actions/config/autoconfig'
+import { autoconfig as knuthAutoconfig } from 'knuth-bch-startos/startos/actions/config/autoconfig'
 import { sdk } from './sdk'
 import { storeJson } from './file-models/store.json'
 
@@ -42,8 +43,23 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
     } else if (nodePackageId === 'flowee') {
       // Flowee: ASICSeer uses JSON-RPC only — no autoconfig needed.
     } else if (nodePackageId === 'knuth-bch') {
-      // Knuth: no JSON-RPC in upstream yet; nothing to autoconfigure.
-      // Mining pool will fail at RPC handshake until upstream RPC ships.
+      // Knuth v1.3.0+ optional JSON-RPC. Force RPC on + full DB.
+      // Classic getblocktemplate/submitblock still missing upstream
+      // (only *light variants) — k-nuth/kth#616. Pool probe will fail
+      // on GBT until that lands; autoconfig still gets the node ready.
+      await sdk.action.createTask(effects, 'knuth-bch', knuthAutoconfig, 'critical', {
+        input: {
+          kind: 'partial',
+          // @ts-ignore
+          value: {
+            databaseMode: 'full',
+            rpcEnabled: true,
+          },
+        },
+        reason:
+          'Mining requires JSON-RPC enabled and full (non-pruned) database mode on Knuth.',
+        when: { condition: 'input-not-matches', once: false },
+      })
     } else {
       // BCHN: txindex=true implicitly enforces non-pruned operation and avoids prune null/0 mismatch.
       await sdk.action.createTask(effects, nodePackageId, bchnAutoconfig, 'critical', {
@@ -77,7 +93,7 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   } else if (nodePackageId === 'knuth-bch') {
     deps['knuth-bch'] = {
       kind: 'running',
-      versionRange: '>=0.80.0:0',
+      versionRange: '>=1.3.0:0',
       healthChecks: ['primary'],
     }
   } else {

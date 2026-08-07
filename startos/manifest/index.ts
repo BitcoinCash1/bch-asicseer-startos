@@ -54,6 +54,12 @@ export const manifest = setupManifest({
       optional: true,
       s9pk: null,
     },
+    'knuth-bch': {
+      description:
+        'Knuth — high-performance C++ BCH full node with optional JSON-RPC (v1.3.0+). Classic getblocktemplate is not available yet (k-nuth/kth#616); only light GBT methods exist upstream.',
+      optional: true,
+      s9pk: null,
+    },
     tor: {
       description:
         'StartOS Tor package providing SOCKS5 proxy support for optional onion-routed node RPC.',

@@ -9,7 +9,8 @@
     "@start9labs/start-sdk": "1.5.3",
     "bitcoin-cash-node-startos": "file:../bitcoin-cash-node-startos",
     "bitcoin-cash-daemon-startos": "file:../bitcoin-cash-daemon-startos",
-    "flowee-startos": "file:../flowee-startos"
+    "flowee-startos": "file:../flowee-startos",
+    "knuth-bch-startos": "file:../knuth-bch-startos"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
