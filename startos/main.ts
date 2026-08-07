@@ -224,7 +224,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
       ) {
         lastProbeFailure =
           nodePackageId === 'knuth-bch'
-            ? 'Knuth mines via getblocktemplatelight/submitblocklight (v1.3.0), not classic getblocktemplate. ASICSeer still speaks classic GBT — see k-nuth/kth#616.'
+            ? 'Knuth mines via getblocktemplatelight/submitblocklight (v1.3.0), not classic getblocktemplate. ASICSeer still speaks classic GBT'
             : 'Node rejected getblocktemplate (method not found). This pool needs classic GBT RPC.'
       } else if (gbtBody.includes('403') || infoBody.includes('403')) {
         lastProbeFailure =

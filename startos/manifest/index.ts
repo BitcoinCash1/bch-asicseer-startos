@@ -56,7 +56,7 @@ export const manifest = setupManifest({
     },
     'knuth-bch': {
       description:
-        'Knuth — high-performance C++ BCH full node. v1.3.0 mining is getblocktemplatelight/submitblocklight (mempool GBT). ASICSeer still uses classic GBT; bridge work tracked at k-nuth/kth#616.',
+        'Knuth — high-performance C++ BCH full node. v1.3.0 mining is getblocktemplatelight/submitblocklight (mempool GBT). ASICSeer still uses classic GBT',
       optional: true,
       s9pk: null,
     },

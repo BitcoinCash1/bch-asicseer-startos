@@ -46,7 +46,7 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
       // Knuth v1.3.0: mempool + light mining RPC (getblocktemplatelight /
       // submitblocklight). Force RPC on + full DB. ASICSeer still speaks
       // classic getblocktemplate — protocol mismatch, not "no mining"
-      // (k-nuth/kth#616). Autoconfig still gets the node ready.
+      // Autoconfig still gets the node ready.
       await sdk.action.createTask(effects, 'knuth-bch', knuthAutoconfig, 'critical', {
         input: {
           kind: 'partial',
