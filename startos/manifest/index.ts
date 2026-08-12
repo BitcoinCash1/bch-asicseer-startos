@@ -9,7 +9,7 @@ export const manifest = setupManifest({
   marketingUrl: 'https://github.com/cculianu/asicseer-pool',
   donationUrl: null,
   docsUrls: [
-    'https://github.com/BitcoinCash1/bch-asicseer-startos/blob/master/README.md',
+    'https://github.com/BitcoinCash1/bch-asicseer-startos/blob/master/instructions.md',
     'https://github.com/cculianu/asicseer-pool',
   ],
   description: {
@@ -51,6 +51,12 @@ export const manifest = setupManifest({
     flowee: {
       description:
         'Flowee the Hub — Fast BCH validator. Good for relay, but uses SPV-level validation. Not recommended as sole mining node.',
+      optional: true,
+      s9pk: null,
+    },
+    'knuth-bch': {
+      description:
+        'Knuth — high-performance C++ BCH full node. v1.3.0 mining is getblocktemplatelight/submitblocklight (mempool GBT). ASICSeer still uses classic GBT',
       optional: true,
       s9pk: null,
     },

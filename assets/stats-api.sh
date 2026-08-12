@@ -61,7 +61,7 @@ read_pool_stats() {
       users:       (.Users // .users // 0),
       accepted:    (.accepted // 0),
       rejected:    (.rejected // 0),
-      bestshare:   (.bestshare // 0),
+      bestshare:   (.bestshare_alltime // .bestshare // 0),
       runtime:     (.runtime // 0),
       diff:        ((.diff // "0") | if type == "string" then (tonumber // 0) else (. // 0) end),
       SolvedBlocks: '"$SOLVED"',
@@ -201,7 +201,7 @@ read_workers_data() {
             accepted_count: $acount,
             rejected:       $rej,
             current_diff:   $cdiff,
-            bestdiff:       (.bestshare // 0),
+            bestdiff:       (.bestshare_alltime // .bestshare // 0),
             lastshare:      $ls,
             idle:           ($status != "alive"),
             status:         $status
@@ -226,10 +226,23 @@ load_rpc_creds() {
   fi
 }
 
+# ── Emit stratum ports for the WebUI ───────────────────────────────
+# The dashboard reads /api/config.json instead of hard-coding ports.
+# Ports come from the generated pool/solo configs (serverurl "0.0.0.0:PORT"),
+# which main.ts derives from the package's declared interfaces.
+write_config() {
+  CONF_BASE=$(basename "$CONF")
+  PP=$(jq -r '.serverurl[0] // empty' "/data/pool/${CONF_BASE}" 2>/dev/null | sed 's/.*://')
+  SP=$(jq -r '.serverurl[0] // empty' "/data/solo/${CONF_BASE}" 2>/dev/null | sed 's/.*://')
+  printf '%s' "{\"poolPort\":${PP:-0},\"soloPort\":${SP:-0}}" \
+    > "${API_DIR}/config.json.tmp" && mv "${API_DIR}/config.json.tmp" "${API_DIR}/config.json"
+}
+
 load_rpc_creds
 
 while true; do
   load_rpc_creds
+  write_config
 
   # ── Pool mode stats (from /data/pool/log/)
   POOL_STATS=$(read_pool_stats pool)

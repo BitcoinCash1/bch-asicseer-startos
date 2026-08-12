@@ -199,9 +199,17 @@
     var stats = (data && data.stats) || {}
     var connected = getConnectedCount(data)
 
-    el(prefix + '-hashrate').textContent = formatHashrate(
-      stats.hashrate1hr || stats.hashrate5m || stats.hashrate1m || stats.hashrate
-    )
+    // Headline hashrate uses the current windows (1hr/5m/1m). When the pool is
+    // reporting but has no active miners every window is 0, so default to 0 and
+    // show "0 H/s" rather than letting the || chain fall through to undefined
+    // (which rendered a bare "—"). Only show "—" when there is no stats object
+    // at all (pool API down / starting).
+    var hasStats = !!(data && data.stats)
+    var headlineHr =
+      stats.hashrate1hr || stats.hashrate5m || stats.hashrate1m || 0
+    el(prefix + '-hashrate').textContent = hasStats
+      ? formatHashrate(headlineHr)
+      : '—'
     el(prefix + '-workers').textContent = formatNumber(connected)
     // FIX: don't fall back to stats.accepted here — that field is cumulative
     // diff-1 share WORK (hundreds of millions), not a block count. Using it as
@@ -235,6 +243,19 @@
     }
   }
 
+  function networkLabel(chain) {
+    var k = String(chain || '').toLowerCase()
+    var map = {
+      main: 'Mainnet', mainnet: 'Mainnet',
+      test: 'Testnet3', test3: 'Testnet3', testnet3: 'Testnet3',
+      test4: 'Testnet4', testnet4: 'Testnet4',
+      chip: 'Chipnet', chipnet: 'Chipnet',
+      scale: 'Scalenet', scalenet: 'Scalenet',
+      reg: 'Regtest', regtest: 'Regtest',
+    }
+    return map[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : '—')
+  }
+
   function updateBlockchain(data) {
     if (!data) return
 
@@ -243,9 +264,16 @@
     var net = data.network || {}
     var mem = data.mempool || {}
 
-    var progress = bc.verificationprogress
-    if (progress != null) {
-      var pct = Math.min(progress * 100, 100)
+    // verificationprogress is the primary signal, but some nodes (notably
+    // bchd) omit it once fully synced. Fall back to the blocks/headers ratio
+    // so the ring still reaches 100% at the tip instead of sticking on "-".
+    var pct = null
+    if (bc.verificationprogress != null) {
+      pct = Math.min(bc.verificationprogress * 100, 100)
+    } else if (bc.blocks != null && bc.headers != null && Number(bc.headers) > 0) {
+      pct = Math.min((Number(bc.blocks) / Number(bc.headers)) * 100, 100)
+    }
+    if (pct != null) {
       el('sync-pct').textContent = pct.toFixed(pct >= 99.9 ? 1 : 0) + '%'
       el('ring-label').textContent = pct.toFixed(0) + '%'
 
@@ -257,6 +285,16 @@
     var subver = net.subversion || ''
     var chain = bc.chain || 'main'
     el('sync-sub').textContent = chain + ' | ' + subver
+
+    // Prominent network badge so the (much smaller) chipnet/testnet figures
+    // aren't mistaken for mainnet.
+    var netBadge = el('net-badge')
+    if (netBadge) {
+      var nkey = String(chain).toLowerCase()
+      netBadge.textContent = networkLabel(nkey)
+      netBadge.className =
+        'net-badge' + (nkey === 'main' || nkey === 'mainnet' ? '' : ' testnet')
+    }
 
     el('node-blocks').textContent = formatNumber(bc.blocks)
     el('node-headers').textContent = formatNumber(bc.headers)
@@ -273,7 +311,15 @@
 
     var diff = mining.difficulty || bc.difficulty
     el('net-difficulty').textContent = formatDifficulty(diff)
-    el('net-hashrate').textContent = formatHashrate(mining.networkhashps)
+    // networkhashps comes straight from the node's getmininginfo. If a backend
+    // omits it, derive it from difficulty at BCH's 600s target block time
+    // (diff * 2^32 / 600) so the card still populates. A present value is never
+    // overridden.
+    var netHr = mining.networkhashps
+    if ((netHr == null || isNaN(netHr)) && diff) {
+      netHr = (Number(diff) * 4294967296) / 600
+    }
+    el('net-hashrate').textContent = formatHashrate(netHr)
   }
 
   function updateEta(poolData, soloData, nodeData) {
@@ -578,25 +624,46 @@
   // The dashboard is served from the same host, so window.location.hostname
   // tells us which interface the user is on. If .onion → show Tor badge.
   function setupStratumUrls() {
+    // Default ports match interfaces.ts; refined at runtime from
+    // /api/config.json (stats-api.sh derives them from the live pool config),
+    // so the dashboard no longer hard-codes ports in two places.
+    var DEFAULT_POOL_PORT = 3334
+    var DEFAULT_SOLO_PORT = 4568
+
     var host = window.location.hostname || 'localhost'
     var isTor = host.endsWith('.onion')
 
-    var poolUrl   = el('pool-stratum-url')
-    var soloUrl   = el('solo-stratum-url')
-    var poolBadge = el('pool-tor-badge')
-    var soloBadge = el('solo-tor-badge')
-
-    if (poolUrl) poolUrl.textContent = 'stratum+tcp://' + host + ':3334'
-    if (soloUrl) soloUrl.textContent = 'stratum+tcp://' + host + ':4568'
-    var guidePool = el('guide-pool-url')
-    var guideSolo = el('guide-solo-url')
-    if (guidePool) guidePool.textContent = 'stratum+tcp://' + host + ':3334'
-    if (guideSolo) guideSolo.textContent = 'stratum+tcp://' + host + ':4568'
+    function applyPorts(poolPort, soloPort) {
+      var pp = poolPort || DEFAULT_POOL_PORT
+      var sp = soloPort || DEFAULT_SOLO_PORT
+      var poolUrl    = el('pool-stratum-url')
+      var soloUrl    = el('solo-stratum-url')
+      var guidePool  = el('guide-pool-url')
+      var guideSolo  = el('guide-solo-url')
+      var poolPortEl = el('pool-port')
+      var soloPortEl = el('solo-port')
+      if (poolUrl)    poolUrl.textContent = 'stratum+tcp://' + host + ':' + pp
+      if (soloUrl)    soloUrl.textContent = 'stratum+tcp://' + host + ':' + sp
+      if (guidePool)  guidePool.textContent = 'stratum+tcp://' + host + ':' + pp
+      if (guideSolo)  guideSolo.textContent = 'stratum+tcp://' + host + ':' + sp
+      if (poolPortEl) poolPortEl.textContent = pp
+      if (soloPortEl) soloPortEl.textContent = sp
+    }
 
     if (isTor) {
+      var poolBadge = el('pool-tor-badge')
+      var soloBadge = el('solo-tor-badge')
       if (poolBadge) poolBadge.style.display = ''
       if (soloBadge) soloBadge.style.display = ''
     }
+
+    // Show defaults immediately, then refine from the served config.
+    applyPorts(DEFAULT_POOL_PORT, DEFAULT_SOLO_PORT)
+    fetchStats('/api/config.json').then(function (cfg) {
+      if (cfg && (cfg.poolPort || cfg.soloPort)) {
+        applyPorts(Number(cfg.poolPort), Number(cfg.soloPort))
+      }
+    })
   }
 
   // Add SVG gradient for the ring

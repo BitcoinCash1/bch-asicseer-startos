@@ -75,6 +75,30 @@ h1 {
   color: var(--accent);
 }
 
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.net-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* Non-mainnet networks use a warning color so it's obvious at a glance that
+   the (much smaller) difficulty/hashrate figures are from a test network. */
+.net-badge.testnet {
+  background: rgba(240, 185, 11, 0.16);
+  color: #f0b90b;
+}
+
 /* ── Dashboard layout ─────────────────────────────────────────── */
 .dashboard {
   display: grid;

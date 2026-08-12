@@ -25,4 +25,11 @@ RUN sed -i 's/quit(1, "No isscript support from bitcoind -- please use a bitcoin
 # Patch 2: add cashaddr_to_scriptpubkey_ helper and use it as fallback when scriptPubKey missing.
 RUN python3 /build/patches/bchd_cashaddr.py
 
+# Patch 3: don't hard-require coinbaseaux in getblocktemplate. It is a
+# deprecated/optional GBT field that Flowee the Hub omits; asicseer-pool only
+# reads its "flags" subfield and already defaults that to "" when absent
+# (src/bitcoin.c). The spurious requirement rejected every Flowee template
+# ("JSON failed to decode GBT ... No bitcoinds active!").
+RUN sed -i 's/ || !curtime || !bits || !coinbase_aux))/ || !curtime || !bits))/' src/bitcoin.c
+
 RUN mkdir out && cd out && cmake -DCMAKE_BUILD_TYPE=Release .. && make
