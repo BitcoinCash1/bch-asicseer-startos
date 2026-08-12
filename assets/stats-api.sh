@@ -1,11 +1,11 @@
 #!/bin/sh
-# Reads pool/solo stats from daemon log files and BCHN RPC,
+# Reads pool stats from the daemon's log files and the node's RPC,
 # then assembles JSON for the WebUI.
 #
-# The pool/solo daemons automatically write stats to:
+# The pool daemon writes its stats to:
 #   {logdir}/pool/pool.status  — multi-line JSON with pool-wide stats
 #   {logdir}/users/{address}   — per-user JSON with worker arrays
-# logdir = /data/pool/log (pool mode) or /data/solo/log (solo mode)
+# logdir = /data/pool/log
 # These files live on the shared /data volume, accessible to this container.
 
 API_DIR="/var/www/html/api"
@@ -228,13 +228,11 @@ load_rpc_creds() {
 
 # ── Emit stratum ports for the WebUI ───────────────────────────────
 # The dashboard reads /api/config.json instead of hard-coding ports.
-# Ports come from the generated pool/solo configs (serverurl "0.0.0.0:PORT"),
-# which main.ts derives from the package's declared interfaces.
+# The port comes from the generated config (serverurl "0.0.0.0:PORT"), which
+# main.ts derives from the package's declared interface.
 write_config() {
-  CONF_BASE=$(basename "$CONF")
-  PP=$(jq -r '.serverurl[0] // empty' "/data/pool/${CONF_BASE}" 2>/dev/null | sed 's/.*://')
-  SP=$(jq -r '.serverurl[0] // empty' "/data/solo/${CONF_BASE}" 2>/dev/null | sed 's/.*://')
-  printf '%s' "{\"poolPort\":${PP:-0},\"soloPort\":${SP:-0}}" \
+  PP=$(jq -r '.serverurl[0] // empty' "$CONF" 2>/dev/null | sed 's/.*://')
+  printf '%s' "{\"poolPort\":${PP:-0}}" \
     > "${API_DIR}/config.json.tmp" && mv "${API_DIR}/config.json.tmp" "${API_DIR}/config.json"
 }
 
@@ -248,11 +246,6 @@ while true; do
   POOL_STATS=$(read_pool_stats pool)
   POOL_USERS=$(read_users_data pool)
   POOL_WORKERS=$(read_workers_data pool)
-
-  # ── Solo mode stats (from /data/solo/log/)
-  SOLO_STATS=$(read_pool_stats solo)
-  SOLO_USERS=$(read_users_data solo)
-  SOLO_WORKERS=$(read_workers_data solo)
 
   # ── Blockchain stats from BCHN RPC ──────────────────────────────
   CHAIN_INFO=$(rpc_call getblockchaininfo || echo '{}')
@@ -271,13 +264,10 @@ while true; do
   printf '%s' "{\"stats\":${POOL_STATS},\"users\":${POOL_USERS},\"workers\":${POOL_WORKERS}}" \
     > "${API_DIR}/pool-stats.json.tmp" && mv "${API_DIR}/pool-stats.json.tmp" "${API_DIR}/pool-stats.json"
 
-  printf '%s' "{\"stats\":${SOLO_STATS},\"users\":${SOLO_USERS},\"workers\":${SOLO_WORKERS}}" \
-    > "${API_DIR}/solo-stats.json.tmp" && mv "${API_DIR}/solo-stats.json.tmp" "${API_DIR}/solo-stats.json"
-
   printf '%s' "{\"blockchain\":${CHAIN_INFO},\"mining\":${MINING_INFO},\"network\":${NET_INFO},\"mempool\":${MEMPOOL_INFO}}" \
     > "${API_DIR}/node-stats.json.tmp" && mv "${API_DIR}/node-stats.json.tmp" "${API_DIR}/node-stats.json"
 
-  printf '%s' "{\"pool\":${POOL_STATS},\"solo\":${SOLO_STATS},\"node_rpc\":\"${RPC_STATUS}\"}" \
+  printf '%s' "{\"pool\":${POOL_STATS},\"node_rpc\":\"${RPC_STATUS}\"}" \
     > "${API_DIR}/service-status.json.tmp" && mv "${API_DIR}/service-status.json.tmp" "${API_DIR}/service-status.json"
 
   sleep 5

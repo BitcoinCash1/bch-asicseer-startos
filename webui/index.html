@@ -92,26 +92,6 @@
 
         <div class="card">
           <div class="card-header">
-            <h2>Solo Mining</h2>
-            <span class="badge solo">Winner Takes All</span>
-          </div>
-          <div class="card-body">
-            <div class="stat-row"><span class="label">Port</span><span class="value" id="solo-port">4568</span></div>
-            <div class="stat-row"><span class="label">Workers</span><span class="value" id="solo-workers">-</span></div>
-            <div class="stat-row"><span class="label">Hashrate</span><span class="value" id="solo-hashrate">-</span></div>
-            <div class="stat-row"><span class="label">Blocks Found</span><span class="value" id="solo-blocks">-</span></div>
-            <div class="stat-row"><span class="label">Round Progress</span><span class="value" id="solo-round-pct">-</span></div>
-            <div class="stat-row"><span class="label">Luck</span><span class="value" id="solo-luck">-</span></div>
-            <div class="stat-row"><span class="label">Best Share</span><span class="value" id="solo-bestshare">-</span></div>
-          </div>
-          <div class="card-footer">
-            <code id="solo-stratum-url">stratum+tcp://host:4568</code>
-            <span class="tor-badge" id="solo-tor-badge" style="display:none">Tor</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
             <h2>Network</h2>
             <span class="badge net">SHA256D</span>
           </div>
@@ -207,29 +187,22 @@
         <div class="step">
           <div class="step-num">1</div>
           <div>
-            <strong>Pool mode</strong>
-            <p>Use <code id="guide-pool-url">stratum+tcp://host:3334</code> for shared mining payouts.</p>
+            <strong>Point your miner here</strong>
+            <p>Use <code id="guide-pool-url">stratum+tcp://host:3334</code>. Run the <strong>Connection Info</strong> action in StartOS for the exact address it assigned.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
           <div>
-            <strong>Solo mode</strong>
-            <p>Use <code id="guide-solo-url">stratum+tcp://host:4568</code> for winner-takes-all solo mining.</p>
+            <strong>Username format</strong>
+            <p>Set the worker username to the BCH address you want that miner paid at, optionally with a suffix like <code>bitcoincash:q...worker01</code>.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
           <div>
-            <strong>Username format</strong>
-            <p>Set worker username to your BCH payout address, optionally with a suffix like <code>bitcoincash:q...worker01</code>.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">4</div>
-          <div>
-            <strong>Tor access</strong>
-            <p>If this dashboard is loaded on a <code>.onion</code> host, use the same hostname with ports 3334/4568 in your miner.</p>
+            <strong>How you get paid</strong>
+            <p>Each block is split in its coinbase between the miners that worked on it, paid straight to those addresses. The pool's own payout address receives only the pool fee.</p>
           </div>
         </div>
       </div>

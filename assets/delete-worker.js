@@ -1,5 +1,5 @@
 'use strict'
-// Tiny HTTP server: handles POST /api/delete-worker?address=<addr>&mode=pool|solo
+// Tiny HTTP server: handles POST /api/delete-worker?address=<addr>
 // Writes a tombstone so stats-api.sh suppresses the worker even after the pool
 // daemon recreates the user file from its in-memory state.
 // Listens on 127.0.0.1:8181 only; nginx proxies /api/delete-worker to it.
@@ -36,13 +36,6 @@ http.createServer(function (req, res) {
   }
 
   var address = String(parsed.query.address || '').trim()
-  var mode    = String(parsed.query.mode    || '').trim()
-
-  if (mode !== 'pool' && mode !== 'solo') {
-    res.writeHead(400)
-    res.end(JSON.stringify({ ok: false, error: 'Invalid mode' }))
-    return
-  }
 
   if (!SAFE_ADDR.test(address)) {
     res.writeHead(400)
@@ -52,8 +45,8 @@ http.createServer(function (req, res) {
 
   // path.basename strips any directory traversal attempts
   var safeAddr  = path.basename(address)
-  var filePath  = '/data/' + mode + '/log/users/' + safeAddr
-  var tombPath  = '/data/' + mode + '/log/users/.tomb.' + safeAddr
+  var filePath  = '/data/pool/log/users/' + safeAddr
+  var tombPath  = '/data/pool/log/users/.tomb.' + safeAddr
   var nowSec    = Math.floor(Date.now() / 1000)
 
   // Write tombstone first — stats-api.sh checks this to suppress the worker
@@ -73,7 +66,7 @@ http.createServer(function (req, res) {
         return
       }
       res.writeHead(200)
-      res.end(JSON.stringify({ ok: true, address: address, mode: mode }))
+      res.end(JSON.stringify({ ok: true, address: address }))
     })
   })
 }).listen(8181, '127.0.0.1')

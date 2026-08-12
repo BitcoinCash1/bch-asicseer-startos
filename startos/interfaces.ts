@@ -1,17 +1,9 @@
+import { i18n } from './i18n'
 import { sdk } from './sdk'
-import {
-  poolPort,
-  soloPort,
-  uiPort,
-  poolInterfaceId,
-  soloInterfaceId,
-  uiInterfaceId,
-} from './utils'
+import { poolInterfaceId, poolPort, uiInterfaceId, uiPort } from './utils'
 
 export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
-  const receipts = []
-
-  // ── Pool Mining (stratum) ────────────────────────────────────────
+  // Stratum is raw TCP, and mining hardware speaks it unencrypted.
   const poolMulti = sdk.MultiHost.of(effects, 'pool-mining')
   const poolOrigin = await poolMulti.bindPort(poolPort, {
     protocol: null,
@@ -20,52 +12,25 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
     secure: { ssl: false },
   })
   const pool = sdk.createInterface(effects, {
-    name: 'Pool Mining',
+    name: i18n('Pool Mining'),
     id: poolInterfaceId,
-    description:
-      'Stratum mining interface for pool mode — shared rewards',
+    description: i18n('Stratum endpoint your mining hardware connects to'),
     type: 'p2p',
     masked: false,
-    schemeOverride: { ssl: null, noSsl: null },
+    // Miners are pointed at `stratum+tcp://<host>:<port>`, so the addresses
+    // StartOS shows say so.
+    schemeOverride: { ssl: 'stratum+tcp', noSsl: 'stratum+tcp' },
     username: null,
     path: '',
     query: {},
   })
-  receipts.push(await poolOrigin.export([pool]))
 
-  // ── Solo Mining (stratum) ────────────────────────────────────────
-  const soloMulti = sdk.MultiHost.of(effects, 'solo-mining')
-  const soloOrigin = await soloMulti.bindPort(soloPort, {
-    protocol: null,
-    preferredExternalPort: soloPort,
-    addSsl: null,
-    secure: { ssl: false },
-  })
-  const solo = sdk.createInterface(effects, {
-    name: 'Solo Mining',
-    id: soloInterfaceId,
-    description:
-      'Stratum mining interface for solo mode — winner takes all',
-    type: 'p2p',
-    masked: false,
-    schemeOverride: { ssl: null, noSsl: null },
-    username: null,
-    path: '',
-    query: {},
-  })
-  receipts.push(await soloOrigin.export([solo]))
-
-  // ── Web UI ───────────────────────────────────────────────────────
   const uiMulti = sdk.MultiHost.of(effects, 'web-ui')
-  const uiOrigin = await uiMulti.bindPort(uiPort, {
-    protocol: 'http',
-    preferredExternalPort: uiPort,
-  })
+  const uiOrigin = await uiMulti.bindPort(uiPort, { protocol: 'http' })
   const ui = sdk.createInterface(effects, {
-    name: 'Web Dashboard',
+    name: i18n('Web Dashboard'),
     id: uiInterfaceId,
-    description:
-      'Web dashboard for monitoring pool and solo mining stats',
+    description: i18n('Hashrate, shares, connected workers and block history'),
     type: 'ui',
     masked: false,
     schemeOverride: null,
@@ -73,7 +38,6 @@ export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
     path: '',
     query: {},
   })
-  receipts.push(await uiOrigin.export([ui]))
 
-  return receipts
+  return [await poolOrigin.export([pool]), await uiOrigin.export([ui])]
 })

@@ -6,8 +6,6 @@
   --text-muted: #8b949e;
   --accent: #0ac18e;
   --accent-dim: rgba(10, 193, 142, 0.15);
-  --solo: #f0b90b;
-  --solo-dim: rgba(240, 185, 11, 0.15);
   --net: #58a6ff;
   --net-dim: rgba(88, 166, 255, 0.15);
   --radius: 12px;
@@ -154,7 +152,6 @@ h1 {
 }
 
 .badge.pool { background: var(--accent-dim); color: var(--accent); }
-.badge.solo { background: var(--solo-dim); color: var(--solo); }
 .badge.net  { background: var(--net-dim); color: var(--net); }
 
 .card-body {
@@ -432,18 +429,6 @@ footer a:hover {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.worker-mode {
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 8px;
-  margin-left: 6px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.worker-mode.pool { background: var(--accent-dim); color: var(--accent); }
-.worker-mode.solo { background: var(--solo-dim); color: var(--solo); }
 
 .status-dot {
   display: inline-block;

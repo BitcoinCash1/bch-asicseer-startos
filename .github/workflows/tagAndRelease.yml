@@ -2,106 +2,23 @@ name: Tag and Release
 
 on:
   push:
-    branches: [master]
-    paths-ignore: ['*.md', 'Dockerfile.binary', 'patches/**', 'asicseer-src']
-  workflow_run:
-    workflows: ['Build Binary Image']
-    types: [completed]
-    branches: [master]
-  workflow_dispatch:
-
-permissions:
-  contents: write
-  packages: read
+    branches: ['master']
+    paths-ignore: ['*.md']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  release:
-    if: >-
-      github.event_name == 'push' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup build environment
-        uses: Start9Labs/start-technologies/.github/actions/setup-build-env@master
-
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
-
-      - name: Find or create developer signing key
-        run: |
-          if [ -n "${{ secrets.DEV_KEY }}" ]; then
-            mkdir -p ~/.startos
-            printf '%s' "${{ secrets.DEV_KEY }}" > ~/.startos/developer.key.pem
-          else
-            start-cli init-key
-          fi
-        shell: bash
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull asicseer binary image
-        run: docker pull ghcr.io/bitcoincash1/asicseer-bch:latest
-        shell: bash
-
-      - name: Initialize packaging workspace
-        run: start-cli s9pk init-workspace 2>/dev/null || true
-        shell: bash
-
-      - name: Build service packages
-        run: |
-          RUST_LOG=debug RUST_BACKTRACE=1 make
-          echo ""
-          echo "SHA256SUMs:"
-          sha256sum *.s9pk
-        shell: bash
-
-      - name: Generate changelog
-        id: meta
-        run: |
-          FIRST_S9PK=$(ls *.s9pk | head -1)
-          TITLE=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.title')
-          VERSION=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.version')
-          VERSION_TAG="v${VERSION/:/.}"
-          RELEASE_NOTES=$(start-cli s9pk inspect "$FIRST_S9PK" manifest | jq -r '.releaseNotes // "No release notes provided."')
-          {
-            echo "## What's Changed"
-            echo ""
-            echo "Version: ${VERSION} (${VERSION_TAG})"
-            echo ""
-            echo "${RELEASE_NOTES}"
-            echo ""
-            echo "## SHA256 Hashes"
-            echo '```'
-            sha256sum *.s9pk
-            echo '```'
-          } > change-log.txt
-          echo "title=${TITLE}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "vtag=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
-        shell: bash
-
-      - name: Move release tags to current commit
-        run: |
-          git tag -f "${{ steps.meta.outputs.vtag }}"
-          git push origin -f "${{ steps.meta.outputs.vtag }}"
-
-      - name: Publish versioned release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.meta.outputs.vtag }}
-          name: ${{ steps.meta.outputs.title }} ${{ steps.meta.outputs.version }}
-          prerelease: false
-          body_path: change-log.txt
-          files: ./*.s9pk
+  tag:
+    uses: Start9Labs/start-technologies/.github/workflows/tagAndRelease.yml@master
+    with:
+      REFERENCE_REGISTRY: ${{ vars.REFERENCE_REGISTRY }}
+      RELEASE_REGISTRY: ${{ vars.RELEASE_REGISTRY }}
+      S3_S9PKS_BASE_URL: ${{ vars.S3_S9PKS_BASE_URL }}
+    secrets:
+      DEV_KEY: ${{ secrets.DEV_KEY }}
+      S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+      S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
+    permissions:
+      contents: write

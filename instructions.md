@@ -1,101 +1,40 @@
-# ASICSeer Mining Pool
+# ASICSeer
 
-ASICSeer is a Bitcoin Cash mining pool built on the
-[asicseer-pool](https://github.com/cculianu/asicseer-pool) fork of ckpool. It
-supports dual-mode operation — **pool mining** (proportional shared rewards) and
-**solo mining** (winner takes all) — from a single installation on StartOS.
+## Documentation
+
+- [asicseer-pool](https://github.com/cculianu/asicseer-pool) — the upstream pool server, its configuration reference and release notes.
 
 ## What you get on StartOS
 
-- A **Stratum pool server** on port 3334 for ASIC and GPU miners (pool mode).
-- A **Stratum solo server** on port 4568 for miners competing independently (solo mode).
-- A **Web UI dashboard** on port 81 showing real-time hashrate, shares, connected
-  miners, and block history.
-- Built-in **Tor** support — Stratum endpoints are accessible over Tor for private mining.
-- Compatible with any standard Stratum-capable mining device.
+A mining pool and a dashboard, both fed by a Bitcoin Cash node running on this server.
 
-## Prerequisites
+Every block the pool finds is split in its coinbase between the miners that worked on it and paid straight to the addresses they connected with, so you can run this for other people as well as yourself. You take a fee you set — or none. The payout address you configure receives that fee.
 
-ASICSeer requires a running and fully-synced Bitcoin Cash full node. Supported node
-backends on StartOS:
+## Getting set up
 
-- **Bitcoin Cash Node (BCHN)** — recommended for mining
-- **Bitcoin Cash Daemon (BCHD)**
-- **Flowee the Hub**
-- **Knuth** (v1.3.0+) — has a real mining path (`getblocktemplatelight` /
-  `submitblocklight` / `getmininginfo`) with mempool-built templates. ASICSeer
-  still uses *classic* `getblocktemplate`/`submitblock`, so it will not mine
-  against Knuth until the pool speaks the light protocol (or Knuth adds classic
-  GBT aliases).
+1. **Install a Bitcoin Cash node first** and let it finish syncing. Bitcoin Cash Node, Bitcoin Cash Daemon and Flowee the Hub all work. Mining against a node that has not caught up produces blocks the network will reject.
+2. Run **Select Node Backend** and choose the node you installed. If you chose Flowee the Hub, a task appears on Flowee to register the login the pool will use — run it, then restart Flowee.
+3. Run **Configure** and set your **Payout Address**. It has to belong to the same chain as your node: a `bitcoincash:` address for mainnet, `bchtest:` for the test chains, `bchreg:` for regtest. The pool will not mine until this is right, and the Mining health check tells you if it is not.
+4. Start the service. The **Node** health check turns green once your node is synced and answering.
+5. Run **Connection Info** and copy the address into your mining hardware.
 
-Select your node backend via **Actions → Select Node Backend**. The pool reads the
-node's RPC credentials automatically.
+## Using ASICSeer
 
-## Getting started
+### Pointing miners at the pool
 
-1. Install a BCH full node and let it fully sync.
-2. Install ASICSeer.
-3. Run **Actions → Configure Pool** to set:
-   - **Payout Address** — your BCH address to receive block rewards.
-   - **Pool Fee** — percentage fee for pool mode (0–10%; solo is always 0%).
-   - **Pool Identifier** — text embedded in coinbase transactions (your pool's name).
-4. Point your mining hardware at the Stratum endpoints below.
+**Connection Info** gives you the `stratum+tcp://` address along with the username and password format. Set the username to the Bitcoin Cash address you want that miner paid at, optionally followed by a dot and a name for the machine — `bitcoincash:qr….rig1`. Miners with no name are numbered `worker01`, `worker02` and so on. The password is not checked; anything will do.
 
-## Connecting miners
+### Web Dashboard
 
-Replace `<startos-lan-address>` with your StartOS device's LAN IP address.
+Current hashrate, accepted shares, connected workers, the best share found so far, and recent blocks. Workers appear a minute or two after they start submitting.
 
-| Mode | Stratum URL                                | Port |
-|------|--------------------------------------------|------|
-| Pool | `stratum+tcp://<startos-lan-address>:3334` | 3334 |
-| Solo | `stratum+tcp://<startos-lan-address>:4568` | 4568 |
+### Actions
 
-Most miners accept a URL in this form. Set the username field to your BCH payout
-address (or any worker name); the password field can be anything (e.g. `x`).
-
-For Tor access: open **Interfaces → Pool Mining Interface → Add Onion Service** in
-StartOS to get a `.onion` Stratum address and configure your miner's SOCKS5 proxy.
-
-## Pool vs solo
-
-- **Pool mode** — all connected miners share a single block-finding effort. When a
-  block is found the reward is split proportionally by shares submitted. Produces
-  steady income with multiple miners.
-- **Solo mode** — each miner competes independently. A miner that finds a block keeps
-  the full reward. Variance is high — you may find many blocks in a day or none for
-  weeks depending on your hashrate.
-
-## Web UI dashboard
-
-The web dashboard is accessible on **port 81** from your LAN. It shows:
-
-- Real-time pool and solo hashrate.
-- Per-miner hashrate and share count.
-- Recent blocks found (pool and solo separately).
-- Connected workers.
-
-## Actions
-
-- **Configure Pool** — set payout address, pool fee, and pool identifier.
-- **Select Node Backend** — switch between BCHN, BCHD, Flowee, or Knuth.
-
-## Ports
-
-| Port | Protocol | Purpose                  |
-|------|----------|--------------------------|
-| 3334 | TCP      | Stratum — pool mining    |
-| 4568 | TCP      | Stratum — solo mining    |
-| 81   | HTTP     | Web UI dashboard         |
+- **Configure** — your payout address, the fee the pool keeps from each block, the identifier written into the coinbase of blocks you find, the difficulty new miners start at, and whether to keep the developer donation. Saving restarts the pool.
+- **Select Node Backend** — switch which node the pool mines on. If the new node is on a different chain, the accumulated share and hashrate figures are cleared, because they do not carry across chains.
+- **Connection Info** — the address and login format for your miners.
+- **Wipe Mining State** — clears every share count and hashrate figure and restarts. Use it when a miner is stuck showing as idle or the statistics look wrong. Blocks already found are not affected.
 
 ## Limitations
 
-- **The BCH node must be fully synced** before the pool can serve valid block
-  templates. Miners connect but receive no work until IBD completes.
-- Block rewards go to the **Payout Address** configured in Actions. Verify this is a
-  BCH address you control before connecting miners.
-- Pool share history is not included in backups.
-
-## Support
-
-- Package: <https://github.com/BitcoinCash1/bch-asicseer-startos>
-- Upstream: <https://github.com/cculianu/asicseer-pool>
+There is no solo-mining mode — the upstream pool has none. Every block is always split between the miners that worked on it. Knuth is also not supported as a node backend; it serves mining templates through a different set of RPC calls than this pool knows how to make.

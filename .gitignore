@@ -1,21 +1,8 @@
-# Build artifacts
 *.s9pk
-javascript/
-
-# Dependencies
+startos/*.js
 node_modules/
-
-# System files
 .DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
-
-# IDE
-.idea/
 .vscode/
-*.code-workspace
-
-# Logs
-*.log
+docker-images
+javascript
+ncc-cache
