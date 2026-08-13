@@ -4,10 +4,7 @@ import {
   rpcPlaintextPort as bchdRpcPort,
 } from 'bitcoin-cash-daemon-startos/startos/utils'
 import { networkPorts as bchnNetworkPorts } from 'bitcoin-cash-node-startos/startos/utils'
-import {
-  rpcHostId as floweeRpcHostId,
-  rpcPort as floweeRpcPort,
-} from 'flowee-startos/startos/utils'
+import { rpcHostId as floweeRpcHostId } from 'flowee-startos/startos/utils'
 import { sdk } from './sdk'
 
 export const poolPort = 3334
@@ -26,7 +23,7 @@ export const rootDir = '/data'
  */
 export const nodeMountpoint = '/mnt/node'
 
-export const NODE_IDS = ['bitcoincashd', 'bchd', 'flowee'] as const
+export const NODE_IDS = ['bitcoincashd', 'bchd', 'flowee', 'knuth-bch'] as const
 export type NodeId = (typeof NODE_IDS)[number]
 
 /** The chains a node can report. `main` wipes the pool's stats when it moves. */
@@ -62,7 +59,20 @@ const RPC_BINDINGS: Record<
     ssl: false,
   },
   bchd: { hostId: bchdRpcHostId, port: () => bchdRpcPort },
-  flowee: { hostId: floweeRpcHostId, port: () => floweeRpcPort, ssl: false },
+  flowee: {
+    hostId: floweeRpcHostId,
+    // Hub defaults match BCHN per network. Start9 Flowee :12 pinned 8332
+    // and broke chipnet dependents; BitcoinCash1 / Flowee #4 restore this.
+    port: (network) => bchnNetworkPorts[network].rpc,
+    ssl: false,
+  },
+  // Optional sideload from BitcoinCash1. Same per-network RPC ports as BCHN.
+  // Classic GBT is served by the 1.3.0 sidecar (kth itself is light-GBT).
+  'knuth-bch': {
+    hostId: 'rpc',
+    port: (network) => bchnNetworkPorts[network].rpc,
+    ssl: false,
+  },
 }
 
 /**

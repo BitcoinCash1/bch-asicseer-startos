@@ -57,3 +57,16 @@ export const floweeDescription = {
   fr_FR:
     'Un nœud complet Bitcoin Cash modulaire conçu pour la vitesse. Construit les modèles de bloc que le pool mine.',
 }
+
+export const knuthDescription = {
+  en_US:
+    'Optional sideload (BitcoinCash1). A C++ Bitcoin Cash full node. Classic GBT is served by the package sidecar so Fulcrum, Explorer and pools can use it.',
+  es_ES:
+    'Sideload opcional (BitcoinCash1). Nodo completo C++ de Bitcoin Cash. El sidecar del paquete sirve GBT clásico.',
+  de_DE:
+    'Optionales Sideload (BitcoinCash1). C++-Bitcoin-Cash-Vollknoten. Das Paket-Sidecar stellt klassisches GBT bereit.',
+  pl_PL:
+    'Opcjonalny sideload (BitcoinCash1). Pełny węzeł Bitcoin Cash w C++. Sidecar pakietu serwuje klasyczne GBT.',
+  fr_FR:
+    'Sideload optionnel (BitcoinCash1). Nœud complet Bitcoin Cash en C++. Le sidecar du paquet sert le GBT classique.',
+}

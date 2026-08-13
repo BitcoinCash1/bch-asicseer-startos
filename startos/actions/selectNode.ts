@@ -32,6 +32,7 @@ export const selectNode = sdk.Action.withInput(
         bitcoincashd: i18n('Bitcoin Cash Node'),
         bchd: i18n('Bitcoin Cash Daemon'),
         flowee: i18n('Flowee the Hub'),
+        'knuth-bch': i18n('Knuth'),
       },
     }),
   }),

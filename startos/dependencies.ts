@@ -10,6 +10,7 @@ const NODE_TASK_KEYS: Record<NodeId, string | null> = {
   bitcoincashd: null,
   bchd: null,
   flowee: 'flowee:create-dependent-credential',
+  'knuth-bch': null,
 }
 
 /**
@@ -35,7 +36,13 @@ const NODE_DEPENDENCY: Record<NodeId, T.DependencyRequirement> = {
     id: 'flowee',
     kind: 'running',
     // Where Flowee moved to hashed `rpcauth` and added the action below.
-    versionRange: '>=2026.5.2:12',
+    versionRange: '>=2026.5.3:0',
+    healthChecks: ['primary'],
+  },
+  'knuth-bch': {
+    id: 'knuth-bch',
+    kind: 'running',
+    versionRange: '>=1.3.0',
     healthChecks: ['primary'],
   },
 }

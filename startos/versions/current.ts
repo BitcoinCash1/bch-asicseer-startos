@@ -1,10 +1,10 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
 
 export const current = VersionInfo.of({
-  version: '1.5.4:24',
+  version: '1.5.4:25',
   releaseNotes: {
     en_US:
-      'The pool now reaches its node the way StartOS intends, which fixes mining against Flowee the Hub — its RPC credentials moved and the pool was still looking for the old ones. Choosing Knuth as the backend is gone: it does not serve the kind of block template this pool asks for. Mining addresses are shown as stratum+tcp:// URLs you can copy straight into a miner, a new Node health check reports when the node is still syncing, and setting a pool fee of 0% now really means zero.',
+      'Optional Knuth sideload (BitcoinCash1); Flowee is dialed on the per-network RPC port. The pool reaches its node over the StartOS host bridge, which fixes mining against Flowee the Hub. Mining addresses are shown as stratum+tcp:// URLs, a Node health check reports when the node is still syncing, and a pool fee of 0% now really means zero.',
     es_ES:
       'El pool ahora llega a su nodo como StartOS espera, lo que arregla la minería con Flowee the Hub: sus credenciales RPC cambiaron de sitio y el pool seguía buscando las antiguas. Se elimina Knuth como backend: no sirve el tipo de plantilla de bloque que pide este pool. Las direcciones de minería se muestran como URLs stratum+tcp:// que puede copiar directamente en un minero, una nueva comprobación de estado Nodo avisa cuando el nodo aún se está sincronizando, y una comisión del 0% ahora significa realmente cero.',
     de_DE:

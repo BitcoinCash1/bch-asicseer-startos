@@ -3,6 +3,7 @@ import {
   bchdDescription,
   bitcoincashdDescription,
   floweeDescription,
+  knuthDescription,
   long,
   short,
 } from './i18n'
@@ -40,6 +41,14 @@ export const manifest = setupManifest({
       metadata: {
         title: 'Bitcoin Cash Daemon',
         icon: 'https://raw.githubusercontent.com/Start9-Community/bitcoin-cash-daemon-startos/master/icon.png',
+      },
+    },
+    'knuth-bch': {
+      description: knuthDescription,
+      optional: true,
+      metadata: {
+        title: 'Knuth',
+        icon: 'https://raw.githubusercontent.com/BitcoinCash1/knuth-bch-startos/master/icon.svg',
       },
     },
     flowee: {
