@@ -1,0 +1,54 @@
+name: Check Upstream
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for a new upstream asicseer-pool release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          LATEST=$(gh release view --repo cculianu/asicseer-pool --json tagName -q '.tagName' 2>/dev/null || echo "")
+          if [ -z "$LATEST" ]; then echo "Could not fetch upstream version"; exit 0; fi
+
+          CURRENT=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          idx = Path("startos/versions/index.ts").read_text()
+          var = re.search(r"current:\s*(\w+)", idx).group(1)
+          imp = re.search(rf"import \{{\s*{re.escape(var)}\s*\}} from '([^']+)'", idx)
+          ver = re.search(
+              r"version:\s*'([^']+)'",
+              Path("startos/versions/" + imp.group(1).lstrip("./") + ".ts").read_text(),
+          ).group(1)
+          print("v" + ver.split(":", 1)[0])
+          PY
+          )
+
+          if [ "${LATEST#v}" = "${CURRENT#v}" ]; then
+            echo "Already at $LATEST — no update"
+            exit 0
+          fi
+
+          echo "Updating $CURRENT -> $LATEST"
+          if bash scripts/auto-bump.sh "$LATEST"; then
+            gh workflow run tagAndRelease.yml
+          else
+            echo "auto-bump skipped or failed — not dispatching release"
+          fi
+        shell: bash
