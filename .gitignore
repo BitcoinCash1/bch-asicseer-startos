@@ -4,6 +4,7 @@ javascript/
 
 # Dependencies
 node_modules/
+.deps/
 
 # System files
 .DS_Store

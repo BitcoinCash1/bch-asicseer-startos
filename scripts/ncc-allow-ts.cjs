@@ -22,17 +22,12 @@ const loader = path.join(
 
 if (fs.existsSync(loader)) {
   let src = fs.readFileSync(loader, 'utf8')
-  const before = src
-  src = src.replace(
-    /!ae\.loaderOptions\.allowTsInNodeModules&&N\.indexOf\("node_modules"\)!==-1/g,
-    'false',
-  )
-  src = src.replace(
-    /allowTsInNodeModules:false/g,
-    'allowTsInNodeModules:true',
-  )
-  if (src !== before) {
-    fs.writeFileSync(loader, src)
+  const needle =
+    'experimentalWatchApi:false,allowTsInNodeModules:false,experimentalFileCaching:true'
+  const next =
+    'experimentalWatchApi:false,allowTsInNodeModules:true,experimentalFileCaching:true'
+  if (src.includes(needle)) {
+    fs.writeFileSync(loader, src.replace(needle, next))
   }
 }
 
