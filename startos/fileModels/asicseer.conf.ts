@@ -26,20 +26,13 @@ const shape = z.object({
 export type AsicseerConf = z.infer<typeof shape>
 
 /**
- * asicseer-pool reads `pool_fee` through jansson's `json_is_real`, which is
- * false for a whole number: `"pool_fee": 0` is discarded and silently replaced
- * by the built-in 1% default, so a pool configured to take nothing would take
- * one percent. JSON cannot spell zero as a float, so the value is stitched in
- * after serialisation, keyed off a sentinel that cannot collide with anything
- * `JSON.stringify` emits.
+ * asicseer-pool reads `pool_fee` with jansson's `json_is_real`, which rejects a
+ * whole number and falls back to its 1% default — so a 0% fee would charge 1%.
+ * JSON cannot spell a whole number as a float, hence the sentinel.
  */
 const POOL_FEE = ' pool_fee '
 
-/**
- * Lives on the shared volume, where the dashboard's stats script also reads the
- * RPC target and stratum port back out of it. Regenerated in full by `main` on
- * every start.
- */
+/** On the shared volume, where the dashboard's stats script reads it too. */
 export const asicseerConf = FileHelper.raw<AsicseerConf>(
   { base: sdk.volumes.main, subpath: 'pool/asicseer.conf' },
   (conf) =>

@@ -22,11 +22,9 @@ type NodeStore = {
 }
 
 /**
- * Which chain an address belongs to, from its CashAddr prefix. The node is
- * deliberately not asked: Flowee's `validateaddress` is legacy-base58-only and
- * reports every CashAddr invalid, which would reject correct addresses. An
- * address with no prefix encodes no chain, so it is not judged here — the pool
- * still rejects a genuinely wrong one, which the health check surfaces.
+ * Which chain an address belongs to, by prefix. The node is not asked: Flowee's
+ * `validateaddress` is legacy-base58-only and calls every CashAddr invalid.
+ * A prefix-less address encodes no chain, so it is not judged here.
  */
 const addressChain = (
   address: string,
@@ -51,10 +49,8 @@ const addressPrefix = {
 export const main = sdk.setupMain(async ({ effects }) => {
   console.info(i18n('Starting ASICSeer'))
 
-  // A mapped `.const()` read, so saving Configure or choosing a different node
-  // backend restarts the pool onto the new settings by itself. The transient
-  // flags below are deliberately outside it — `main` writes those, and writing
-  // a value it reacts to would restart the service it just started.
+  // Mapped `.const()`, so writing these restarts the pool onto them. The
+  // transient flags below are outside it: `main` writes those itself.
   const settings = await storeJson
     .read((s) => ({
       node: s.nodePackageId,
@@ -122,8 +118,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
 
   const rpcAddress = await nodeRpcBridge(effects, node, network)
 
-  // Flowee keeps only a hash of each RPC password, so the credential it is
-  // dialed with is the one this package minted and registered on it.
+  // Flowee keeps only a hash of each password, so it is dialed with the
+  // credential this package minted and registered on it.
   const rpcUser =
     node === 'flowee'
       ? (settings?.floweeRpcUser ?? '')
@@ -137,10 +133,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
   const payoutChain = addressChain(payoutAddress)
 
   /**
-   * What to return when mining is impossible: one failing health check saying
-   * what to fix, rather than a thrown `main`. Throwing crash-loops the service
-   * under auto-restart, which leaks a subcontainer mount set on every cycle,
-   * and the reactive reads above heal the moment the cause is addressed.
+   * Mining is impossible: report it, rather than throw. A thrown `main`
+   * crash-loops under auto-restart and leaks a mount set every cycle.
    */
   const blocked = (message: string) =>
     sdk.Daemons.of(effects).addHealthCheck('mining', {
@@ -185,10 +179,9 @@ export const main = sdk.setupMain(async ({ effects }) => {
     )
   }
 
-  // The pool reloads its accumulated totals from `{logdir}/pool/pool.status` on
-  // every start, so they survive a restart and have to be deleted here, before
-  // the daemons launch. Shares counted against one chain's difficulty are
-  // meaningless on another, so a chain change wipes them too.
+  // The pool reloads its totals from `{logdir}/pool/pool.status` on start, so
+  // they have to go before the daemons launch. A chain change wipes them too:
+  // shares counted against one chain's difficulty mean nothing on another.
   const flags = await storeJson.read().once()
   if (
     flags?.wipePending ||
@@ -212,8 +205,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     serverurl: [`0.0.0.0:${poolPort}`],
     mindiff: 1,
     startdiff: settings?.poolDifficulty ?? 42,
-    // 0 is upstream's default and means the pool never caps a miner's
-    // difficulty — vardiff follows whatever the hardware can sustain.
+    // 0 is upstream's default: no cap, vardiff follows the hardware.
     maxdiff: 0,
     logdir: `${rootDir}/pool/log`,
     pool_fee: settings?.poolFee ?? 1,
@@ -221,9 +213,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
   })
 
   /**
-   * Whether the pool can actually build work, not just whether the port is
-   * open. asicseer-pool holds the stratum port open while unable to get a block
-   * template, so a bare port check reports a healthy pool that mines nothing.
+   * asicseer-pool holds the stratum port open while unable to get a block
+   * template, so a bare port check would report a pool that mines nothing.
    */
   const miningReady = async () => {
     const log = await poolSub
@@ -282,13 +273,10 @@ export const main = sdk.setupMain(async ({ effects }) => {
       ready: {
         display: i18n('Node'),
         fn: async () => {
-          // The node's chain lives in a file on its volume, which is not a
-          // reactive source, so this is where a chain change is noticed. It is
-          // checked for every node, including BCHN: BCHN does move its RPC port
-          // with the chain, but the binding it moves off is left *disabled*
-          // rather than removed, and a disabled binding still resolves to its
-          // old address — so the bridge read does not go null and `main` is
-          // never re-run by it (verified against bitcoincashd 29.0.0:10).
+          // The node's chain is a file, not a reactive source, so a change is
+          // noticed here — for every node, BCHN included: the binding it moves
+          // off a chain is left disabled, and a disabled binding still
+          // resolves, so the bridge read never goes null.
           const current = await readNodeStore()
           const moved = current?.network && nodeNetwork(current.network)
           if (moved && moved !== network) {
@@ -311,9 +299,8 @@ export const main = sdk.setupMain(async ({ effects }) => {
             } as const
           }
 
-          // Mining on a node that has not caught up builds on a stale tip, so
-          // any block found would be orphaned. Reported rather than enforced —
-          // the pool is left running so its dashboard and miners stay usable.
+          // A block found on a stale tip would be orphaned. Reported, not
+          // enforced: the dashboard and miners stay usable.
           if (current.fullySynced === false) {
             return {
               result: 'loading',

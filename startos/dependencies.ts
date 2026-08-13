@@ -5,19 +5,16 @@ import { NODE_IDS, NodeId } from './utils'
 
 /** The task a node carries on the pool's behalf, keyed `<packageId>:<actionId>`. */
 const NODE_TASK_KEYS: Record<NodeId, string | null> = {
-  // BCHN and BCHD need no configuration beyond their defaults: the pool only
-  // calls getblocktemplate, submitblock, validateaddress and the chain-info
-  // reads, none of which need a transaction index or an unpruned chain.
+  // BCHN and BCHD need nothing beyond their defaults: none of the RPCs the
+  // pool calls need a transaction index or an unpruned chain.
   bitcoincashd: null,
   bchd: null,
   flowee: 'flowee:create-dependent-credential',
 }
 
 /**
- * Only the node the pool actually dials has to be up. It is deliberately gated
- * on the node's own liveness rather than its sync progress — a pool pointed at
- * a node that is still catching up is reported by this package's own
- * `node-status` health check, which is more use than refusing to start.
+ * Gated on the node being up, not synced — `node-status` reports the latter,
+ * which is more use than refusing to start for the days a sync takes.
  */
 const NODE_DEPENDENCY: Record<NodeId, T.DependencyRequirement> = {
   bitcoincashd: {
@@ -30,16 +27,14 @@ const NODE_DEPENDENCY: Record<NodeId, T.DependencyRequirement> = {
     id: 'bchd',
     kind: 'running',
     versionRange: '>=0.22.2:0',
-    // BCHD serves RPC over its own TLS with a self-signed certificate, so it is
-    // dialed through its plaintext proxy daemon instead — that proxy, not the
-    // native RPC, is the binding that has to be up.
+    // Dialed through BCHD's plaintext proxy, not its self-signed TLS RPC, so
+    // the proxy is the binding that has to be up.
     healthChecks: ['rpc-plaintext'],
   },
   flowee: {
     id: 'flowee',
     kind: 'running',
-    // The release that moved RPC credentials to hashed `rpcauth` entries and
-    // added the action this package registers its credential through.
+    // Where Flowee moved to hashed `rpcauth` and added the action below.
     versionRange: '>=2026.5.2:12',
     healthChecks: ['primary'],
   },
@@ -49,11 +44,8 @@ export const setDependencies = sdk.setupDependencies(async ({ effects }) => {
   const node =
     (await storeJson.read().const(effects))?.nodePackageId ?? 'bitcoincashd'
 
-  // Drop the tasks belonging to the nodes the user is not on, so none sits in
-  // the task list against a node the pool no longer talks to. The selected
-  // node's own key is deliberately absent: selecting Flowee writes the store,
-  // which re-runs this, and clearing its key here would race the task the
-  // action raises straight afterwards.
+  // Drop the tasks for nodes the user is not on. The selected node's own key
+  // is absent: clearing it here would race the task selectNode raises.
   await sdk.action.clearTask(
     effects,
     ...NODE_IDS.filter((id) => id !== node)

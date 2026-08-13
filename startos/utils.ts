@@ -20,21 +20,16 @@ export const uiInterfaceId = 'web-ui'
 export const rootDir = '/data'
 
 /**
- * Where the selected node's `main` volume is mounted, read-only. The pool never
- * reads the chain off disk — the mount exists so `main` can read the node's
- * `store.json` for the chain it is on and, on BCHN and BCHD, its RPC
- * credentials.
+ * Where the selected node's `main` volume is mounted, read-only — for its
+ * `store.json`, not for chain data: the chain it is on and, on BCHN and BCHD,
+ * its RPC credentials.
  */
 export const nodeMountpoint = '/mnt/node'
 
 export const NODE_IDS = ['bitcoincashd', 'bchd', 'flowee'] as const
 export type NodeId = (typeof NODE_IDS)[number]
 
-/**
- * The chains a node can report. Mining stats are per-chain — a share found
- * against chipnet difficulty means nothing on mainnet — so `main` wipes the
- * pool's accumulated state when this changes.
- */
+/** The chains a node can report. `main` wipes the pool's stats when it moves. */
 export const NETWORKS = [
   'mainnet',
   'testnet3',
@@ -52,21 +47,16 @@ export const nodeNetwork = (reported: string): Network | null => {
 }
 
 /**
- * Which binding each node publishes the JSON-RPC the pool dials on, and — where
- * the port moves with the chain — how to derive it.
- *
- * BCHN remaps RPC per chain, so its port is only knowable once the node's own
- * chain is known. BCHD's plaintext stunnel proxy and Flowee's RPC are both
- * pinned to one port on every chain. BCHD is dialed through that proxy rather
- * than its native TLS RPC so no certificate has to be trusted here.
+ * Which binding each node publishes the JSON-RPC on. BCHN remaps its port per
+ * chain; BCHD and Flowee are fixed. BCHD is dialed through its plaintext proxy
+ * so no certificate has to be trusted here.
  */
 const RPC_BINDINGS: Record<
   NodeId,
   { hostId: string; port: (network: Network) => number; ssl?: boolean }
 > = {
   bitcoincashd: {
-    // Unlike BCHD and Flowee, the BCHN package does not export its host ids —
-    // `interfaces.ts` there names this group with the same literal.
+    // BCHN exports no host ids; its `interfaces.ts` uses this literal.
     hostId: 'rpc',
     port: (network) => bchnNetworkPorts[network].rpc,
     ssl: false,
@@ -76,14 +66,10 @@ const RPC_BINDINGS: Record<
 }
 
 /**
- * The selected node's JSON-RPC bridge address (`<osIp>:<assigned port>`).
- * `null` while the node is absent, which `main` reports through a failing
- * health check rather than writing an address that cannot answer; the
- * `.const()` heals the moment the node appears.
- *
- * On BCHN this doubles as the chain-change signal: switching chains rebinds RPC
- * to a different port, so this address goes `null` and `main` re-runs against
- * whatever the node moved to.
+ * The selected node's JSON-RPC bridge address. `null` while the node is absent,
+ * which `main` reports as a failing health check; the `.const()` heals when it
+ * appears. It does not signal a chain change — a binding the node moves off is
+ * left disabled, and a disabled binding still resolves.
  */
 export const nodeRpcBridge = (
   effects: T.Effects,

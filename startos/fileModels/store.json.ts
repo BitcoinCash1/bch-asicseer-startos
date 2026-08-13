@@ -10,20 +10,15 @@ export const shape = z.object({
   poolIdentifier: z.string().catch('ASICSeer'),
   poolDifficulty: z.number().catch(42),
   disableDevDonation: z.boolean().catch(false),
-  // Flowee authenticates against hashed `rpcauth` entries and cannot hand a
-  // password back out, so the credential the pool dials it with is minted here
-  // and registered on Flowee by the Select Node Backend action. BCHN and BCHD
-  // publish their own credentials in their `store.json`, which `main` reads off
-  // the mounted node volume — nothing to keep here for them.
+  // Flowee stores only a hash and cannot hand a password back, so the pool
+  // mints its own and Select Node Backend registers it there. BCHN and BCHD
+  // publish theirs in their own `store.json`.
   floweeRpcUser: z.string().catch(''),
   floweeRpcPassword: z.string().catch(''),
-  // Set by the Wipe Mining State action, consumed and cleared by `main` on the
-  // next start. Deliberately outside the reactive read in `main` — the clearing
-  // write would otherwise restart the service it just started.
+  // Set by Wipe Mining State, cleared by `main` on the next start. Outside
+  // `main`'s reactive read, or clearing it would restart the service.
   wipePending: z.boolean().catch(false),
-  // The chain the node was on at the last start. Mining stats are meaningless
-  // across a chain change (mainnet shares against chipnet difficulty), so
-  // `main` wipes them when this moves.
+  // The chain at the last start; `main` wipes the stats when it moves.
   lastNetwork: z.string().catch(''),
 })
 
