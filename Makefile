@@ -16,11 +16,12 @@ include s9pk.mk
 ../knuth-bch-startos:
 	git clone --depth=1 https://github.com/BitcoinCash1/knuth-bch-startos.git $@
 
-# Override s9pk.mk's node_modules recipe to also create @start9labs symlinks
-# inside each cloned sibling so ncc/webpack can find @start9labs/start-sdk
-# when it follows the file: symlinks to their real paths outside the project.
-node_modules: package-lock.json | ../bitcoin-cash-daemon-startos ../bitcoin-cash-node-startos ../flowee-startos ../knuth-bch-startos
-	npm ci
+# npm ci rejects file: siblings that have no package.json version (Missing:
+# bitcoin-cash-daemon-startos@). npm install records them and still locks the
+# registry deps. ncc follows the file: links *out* of node_modules so it can
+# compile those .ts sources; point each sibling at this tree's start-sdk.
+node_modules: package.json | ../bitcoin-cash-daemon-startos ../bitcoin-cash-node-startos ../flowee-startos ../knuth-bch-startos
+	npm install
 	@for pkg in ../bitcoin-cash-daemon-startos ../bitcoin-cash-node-startos ../flowee-startos ../knuth-bch-startos; do \
 		mkdir -p "$$pkg/node_modules"; \
 		ln -sfn "$(abspath node_modules)/@start9labs" "$$pkg/node_modules/@start9labs"; \

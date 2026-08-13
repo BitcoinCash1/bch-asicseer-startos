@@ -1,7 +1,7 @@
 {
   "name": "bch-asicseer-startos",
   "scripts": {
-    "build": "rm -rf ./javascript && ncc build startos/index.ts -o ./javascript",
+    "build": "rm -rf ./javascript && node scripts/ncc-allow-ts.cjs",
     "prettier": "prettier --write startos",
     "check": "tsc --noEmit"
   },
