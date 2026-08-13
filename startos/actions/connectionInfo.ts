@@ -1,5 +1,12 @@
 import { sdk } from '../sdk'
-import { poolPort, soloPort, poolInterfaceId, soloInterfaceId } from '../utils'
+import {
+  poolPort,
+  soloPort,
+  poolInterfaceId,
+  soloInterfaceId,
+  poolHostId,
+  soloHostId,
+} from '../utils'
 
 export const connectionInfo = sdk.Action.withoutInput(
   'connection-info',
@@ -13,12 +20,17 @@ export const connectionInfo = sdk.Action.withoutInput(
     visibility: 'enabled' as const,
   }),
   async ({ effects }) => {
-    const poolIface = await sdk.serviceInterface
-      .getOwn(effects, poolInterfaceId)
-      .once()
-    const soloIface = await sdk.serviceInterface
-      .getOwn(effects, soloInterfaceId)
-      .once()
+    const ifaceFromHost = (host: any, interfaceId: string) => {
+      if (!host) return undefined
+      return Object.values(host.bindings)
+        .flatMap((b: any) => Object.values(b.interfaces))
+        .find((i: any) => i.id === interfaceId)
+    }
+
+    const poolHost = await sdk.host.getOwn(effects, poolHostId).once()
+    const soloHost = await sdk.host.getOwn(effects, soloHostId).once()
+    const poolIface = ifaceFromHost(poolHost, poolInterfaceId)
+    const soloIface = ifaceFromHost(soloHost, soloInterfaceId)
 
     type Member = {
       name: string
@@ -31,7 +43,7 @@ export const connectionInfo = sdk.Action.withoutInput(
     }
 
     const getAddresses = (
-      iface: typeof poolIface,
+      iface: { addressInfo?: { nonLocal: { hostnames: { hostname: string; port: number | null }[] } } } | undefined,
       fallbackPort: number,
     ): string[] => {
       if (!iface?.addressInfo) return []
@@ -42,8 +54,8 @@ export const connectionInfo = sdk.Action.withoutInput(
       })
     }
 
-    const poolAddrs = getAddresses(poolIface, poolPort)
-    const soloAddrs = getAddresses(soloIface, soloPort)
+    const poolAddrs = getAddresses(poolIface as any, poolPort)
+    const soloAddrs = getAddresses(soloIface as any, soloPort)
 
     const members: Member[] = []
 

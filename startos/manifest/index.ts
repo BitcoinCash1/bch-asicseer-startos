@@ -24,17 +24,6 @@ export const manifest = setupManifest({
       emulateMissingAs: 'x86_64',
     },
   },
-  alerts: {
-    install:
-      'ASICSeer requires a running Bitcoin Cash full node (BCHN or Knuth). Make sure your node is fully synced before starting the pool.',
-    update: null,
-    uninstall:
-      'Uninstalling ASICSeer will permanently delete pool configuration and statistics. Mining hardware will need to be reconfigured.',
-    restore:
-      'Restoring will overwrite your current pool configuration.',
-    start: null,
-    stop: 'Stopping ASICSeer will disconnect all active miners.',
-  },
   dependencies: {
     bitcoincashd: {
       description:
