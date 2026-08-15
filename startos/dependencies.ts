@@ -36,13 +36,14 @@ const NODE_DEPENDENCY: Record<NodeId, T.DependencyRequirement> = {
     id: 'flowee',
     kind: 'running',
     // Where Flowee moved to hashed `rpcauth` and added the action below.
-    versionRange: '>=2026.5.3:0',
+    // 2026.5.3 was never a Hub tag; :13 is the port restore on 2026.05.2.
+    versionRange: '>=2026.5.2:13',
     healthChecks: ['primary'],
   },
   'knuth-bch': {
     id: 'knuth-bch',
     kind: 'running',
-    versionRange: '>=1.3.0',
+    versionRange: '>=1.3.0:0',
     healthChecks: ['primary'],
   },
 }
