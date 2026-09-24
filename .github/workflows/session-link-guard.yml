@@ -1,0 +1,59 @@
+name: Session Link Guard
+
+# Fails when a pull request's description or commit messages, or pushed
+# commits, contain an AI session link or AI attribution lines. Commits that
+# came from the Start9-Community copy of the repo are not checked.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check description and commit messages
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+        run: |
+          set -eu
+          PATTERN='claude\.ai/code|Claude-Session:|Co-Authored-By:.*(Claude|anthropic)|Generated (with|by) \[?Claude'
+          fail=0
+          if [ -n "${PR_BODY:-}" ] && printf '%s' "$PR_BODY" | grep -qiE "$PATTERN"; then
+            echo "::error::The pull request description contains an AI session link or attribution. Edit it out, then delete the old revision from the description's edit history."
+            fail=1
+          fi
+          if [ -n "${PR_HEAD:-}" ]; then
+            range="$PR_BASE..$PR_HEAD"
+          elif [ -n "${PUSH_BEFORE:-}" ] && ! echo "$PUSH_BEFORE" | grep -q '^0*$'; then
+            range="$PUSH_BEFORE..$PUSH_AFTER"
+          else
+            range="$PUSH_AFTER -1"
+          fi
+          # Commits that already exist in the Start9-Community copy of this repo
+          # were written there (their maintainers' own trailers), not here.
+          upstream="https://github.com/Start9-Community/${GITHUB_REPOSITORY#*/}.git"
+          exclude=""
+          if git fetch -q --no-tags "$upstream" '+refs/heads/*:refs/upstream/*' 2>/dev/null; then
+            exclude="--not --glob=refs/upstream/*"
+          fi
+          bad=$(git log --format='%h %s' $range $exclude | while read -r h s; do
+            git log -1 --format=%B "$h" | grep -qiE "$PATTERN" && echo "$h $s"
+          done || true)
+          if [ -n "$bad" ]; then
+            echo "::error::These commits carry an AI session link or attribution:"
+            echo "$bad"
+            fail=1
+          fi
+          [ "$fail" = 0 ] && echo "No session links or attribution found."
+          exit $fail
