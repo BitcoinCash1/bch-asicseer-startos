@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+  actions: write
 
 jobs:
   check:
@@ -33,11 +33,10 @@ jobs:
             exit 0
           fi
 
-          if git ls-remote --exit-code --heads origin "auto-bump/$LATEST" >/dev/null; then
-            echo "A bump PR for $LATEST is already open — nothing to do"
-            exit 0
-          fi
 
           echo "Updating $CURRENT -> $LATEST"
+          BEFORE=$(git rev-parse HEAD)
           bash scripts/auto-bump.sh "$LATEST"
+          # GITHUB_TOKEN pushes do not start Tag and Release.
+          if [ "$(git rev-parse HEAD)" != "$BEFORE" ]; then gh workflow run tagAndRelease.yml; fi
         shell: bash

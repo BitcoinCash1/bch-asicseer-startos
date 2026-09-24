@@ -220,7 +220,7 @@ A restored instance comes back on the same node with the same fee address, re-re
 
 ## Upstream Updates
 
-`check-upstream.yml` looks for a new ASICSeer release tag daily. When one appears, `scripts/auto-bump.sh` sets `startos/versions/current.ts` to `<upstream>:0`, resets `ALLOW_DOWNGRADE` to `false`, updates `ARG ASICSEER_REF` in the `Dockerfile`, and opens a pull request from `auto-bump/<tag>`. Before merging, check that every patch in `patches/apply.py` still applies to the new source. Nothing reaches `master` until that PR is merged; merging it is what releases the new version. Package-only fixes bump the revision after the colon by hand in their own PR.
+`check-upstream.yml` looks for a new ASICSeer release tag daily. When one appears, `scripts/auto-bump.sh` sets `startos/versions/current.ts` to `<upstream>:0`, resets `ALLOW_DOWNGRADE` to `false`, updates `ARG ASICSEER_REF` in the `Dockerfile`, commits the bump straight to `master`, and the workflow dispatches Tag and Release, which builds and publishes the new version. If a patch in `patches/apply.py` no longer applies to the new source, the build stops and nothing is released. Package-only fixes bump the revision after the colon by hand.
 
 ## Quick Reference for AI Consumers
 

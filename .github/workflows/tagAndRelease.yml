@@ -4,6 +4,9 @@ on:
   push:
     branches: ['master']
     paths-ignore: ['*.md']
+  # check-upstream dispatches this after an upstream bump: its GITHUB_TOKEN
+  # push to master does not start a push-triggered workflow.
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
