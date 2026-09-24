@@ -3,7 +3,7 @@
   'use strict'
 
   var REFRESH_MS = 5000
-  var loggedInAddress = ''   // current address filter (empty = show all)
+  var loggedInAddress = '' // current address filter (empty = show all)
 
   // ── Luck helpers ──────────────────────────────────────────────────
   // pool.status "diff" = (accounted_diff_shares / network_diff) * 100
@@ -17,11 +17,11 @@
   //   <100% = found fewer blocks than expected (unlucky)
   function computeLuck(stats) {
     var diffPct = parseFloat(stats && stats.diff) || 0
-    var solved  = parseInt(stats && stats.SolvedBlocks) || 0
+    var solved = parseInt(stats && stats.SolvedBlocks) || 0
     if (diffPct <= 0) return { roundPct: 0, luckPct: null, solved: solved }
-    var roundPct = diffPct - (solved * 100)
+    var roundPct = diffPct - solved * 100
     if (roundPct < 0) roundPct = 0
-    var luckPct = solved > 0 ? (solved * 10000 / diffPct) : null
+    var luckPct = solved > 0 ? (solved * 10000) / diffPct : null
     return { roundPct: roundPct, luckPct: luckPct, solved: solved }
   }
 
@@ -29,27 +29,27 @@
     if (pct == null || isNaN(pct)) return '—'
     var n = Number(pct)
     var s
-    if (n < 0.1)     s = n.toFixed(3)
+    if (n < 0.1) s = n.toFixed(3)
     else if (n < 10) s = n.toFixed(2)
-    else             s = n.toFixed(1)
+    else s = n.toFixed(1)
     return s + '%'
   }
 
   // Round progress color: low = on track (green), high = over-due (red)
   function roundClass(pct) {
     var n = Number(pct)
-    if (n < 80)   return 'luck-good'
-    if (n < 120)  return 'luck-ok'
-    if (n < 200)  return 'luck-warn'
+    if (n < 80) return 'luck-good'
+    if (n < 120) return 'luck-ok'
+    if (n < 200) return 'luck-warn'
     return 'luck-bad'
   }
 
   // Luck color: high = lucky (green), low = unlucky (red)
   function luckClass(pct) {
     var n = Number(pct)
-    if (n > 110)  return 'luck-good'
-    if (n >= 90)  return 'luck-ok'
-    if (n >= 60)  return 'luck-warn'
+    if (n > 110) return 'luck-good'
+    if (n >= 90) return 'luck-ok'
+    if (n >= 60) return 'luck-warn'
     return 'luck-bad'
   }
 
@@ -85,9 +85,9 @@
     var v = Number(n)
     if (v >= 1e15) return (v / 1e15).toFixed(2) + ' P'
     if (v >= 1e12) return (v / 1e12).toFixed(2) + ' T'
-    if (v >= 1e9)  return (v / 1e9 ).toFixed(2) + ' G'
-    if (v >= 1e6)  return (v / 1e6 ).toFixed(2) + ' M'
-    if (v >= 1e3)  return (v / 1e3 ).toFixed(2) + ' K'
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + ' G'
+    if (v >= 1e6) return (v / 1e6).toFixed(2) + ' M'
+    if (v >= 1e3) return (v / 1e3).toFixed(2) + ' K'
     return v.toFixed(0)
   }
 
@@ -147,7 +147,9 @@
   }
 
   function normalizeAddress(raw) {
-    var s = String(raw || '').trim().toLowerCase()
+    var s = String(raw || '')
+      .trim()
+      .toLowerCase()
     if (!s) return ''
     if (s.indexOf('.') > 0) s = s.substring(0, s.indexOf('.'))
     if (s.indexOf('bitcoincash:') === 0) s = s.substring('bitcoincash:'.length)
@@ -167,23 +169,30 @@
     if (lastShare > 0) {
       var ageSec = Math.floor(Date.now() / 1000) - lastShare
       if (ageSec < 0) ageSec = 0
-      if (ageSec < 300)  return 'alive'
+      if (ageSec < 300) return 'alive'
       if (ageSec < 3600) return 'idle'
       return 'dead'
     }
     // no lastshare reported — best-effort fallback to hashrate / status field
-    var reported = String(w && w.status || '').toLowerCase()
+    var reported = String((w && w.status) || '').toLowerCase()
     var hr5 = Number((w && w.dsps5) || 0)
     var hr60 = Number((w && w.dsps60) || 0)
-    var altHrShort = Number((w && (w.hashrate5m || w.hashrate1m || w.hashrate)) || 0)
-    var altHrLong = Number((w && (w.hashrate1hr || w.hashrate1d || w.hashrate7d)) || 0)
+    var altHrShort = Number(
+      (w && (w.hashrate5m || w.hashrate1m || w.hashrate)) || 0,
+    )
+    var altHrLong = Number(
+      (w && (w.hashrate1hr || w.hashrate1d || w.hashrate7d)) || 0,
+    )
     if (hr5 > 0 || hr60 > 0 || altHrShort > 0) return 'alive'
     if (altHrLong > 0) return 'idle'
-    if (reported === 'alive' || reported === 'idle' || reported === 'dead') return reported
+    if (reported === 'alive' || reported === 'idle' || reported === 'dead')
+      return reported
     return w && w.idle ? 'idle' : 'dead'
   }
 
-  function el(id) { return document.getElementById(id) }
+  function el(id) {
+    return document.getElementById(id)
+  }
 
   function getConnectedCount(data) {
     var stats = (data && data.stats) || {}
@@ -214,12 +223,13 @@
     // FIX: don't fall back to stats.accepted here — that field is cumulative
     // diff-1 share WORK (hundreds of millions), not a block count. Using it as
     // a fallback when SolvedBlocks=0 makes "Found Blocks" show garbage numbers.
-    var solvedBlocks = (stats.SolvedBlocks != null && !isNaN(stats.SolvedBlocks))
-      ? Number(stats.SolvedBlocks)
-      : 0
+    var solvedBlocks =
+      stats.SolvedBlocks != null && !isNaN(stats.SolvedBlocks)
+        ? Number(stats.SolvedBlocks)
+        : 0
     el(prefix + '-blocks').textContent = formatNumber(solvedBlocks)
     el(prefix + '-bestshare').textContent = formatNumber(
-      stats.bestshare || stats.best_share || 0
+      stats.bestshare || stats.best_share || 0,
     )
 
     // ── Luck metrics ──────────────────────────────────────────────
@@ -246,12 +256,19 @@
   function networkLabel(chain) {
     var k = String(chain || '').toLowerCase()
     var map = {
-      main: 'Mainnet', mainnet: 'Mainnet',
-      test: 'Testnet3', test3: 'Testnet3', testnet3: 'Testnet3',
-      test4: 'Testnet4', testnet4: 'Testnet4',
-      chip: 'Chipnet', chipnet: 'Chipnet',
-      scale: 'Scalenet', scalenet: 'Scalenet',
-      reg: 'Regtest', regtest: 'Regtest',
+      main: 'Mainnet',
+      mainnet: 'Mainnet',
+      test: 'Testnet3',
+      test3: 'Testnet3',
+      testnet3: 'Testnet3',
+      test4: 'Testnet4',
+      testnet4: 'Testnet4',
+      chip: 'Chipnet',
+      chipnet: 'Chipnet',
+      scale: 'Scalenet',
+      scalenet: 'Scalenet',
+      reg: 'Regtest',
+      regtest: 'Regtest',
     }
     return map[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : '—')
   }
@@ -270,14 +287,18 @@
     var pct = null
     if (bc.verificationprogress != null) {
       pct = Math.min(bc.verificationprogress * 100, 100)
-    } else if (bc.blocks != null && bc.headers != null && Number(bc.headers) > 0) {
+    } else if (
+      bc.blocks != null &&
+      bc.headers != null &&
+      Number(bc.headers) > 0
+    ) {
       pct = Math.min((Number(bc.blocks) / Number(bc.headers)) * 100, 100)
     }
     if (pct != null) {
       el('sync-pct').textContent = pct.toFixed(pct >= 99.9 ? 1 : 0) + '%'
       el('ring-label').textContent = pct.toFixed(0) + '%'
 
-      var offset = 314 - (314 * pct / 100)
+      var offset = 314 - (314 * pct) / 100
       var ring = el('ring-progress')
       if (ring) ring.style.strokeDashoffset = offset
     }
@@ -301,8 +322,8 @@
 
     if (bc.blocks != null && bc.headers != null) {
       var lag = bc.blocks - bc.headers
-      el('node-lag').textContent = (lag >= 0 ? '+' : '') + lag + ' / ' +
-        (lag <= 0 ? '+' : '') + (-lag)
+      el('node-lag').textContent =
+        (lag >= 0 ? '+' : '') + lag + ' / ' + (lag <= 0 ? '+' : '') + -lag
     }
 
     el('node-peers').textContent = formatNumber(net.connections)
@@ -322,54 +343,44 @@
     el('net-hashrate').textContent = formatHashrate(netHr)
   }
 
-  function updateEta(poolData, soloData, nodeData) {
+  function updateEta(poolData, nodeData) {
     var mining = (nodeData && nodeData.mining) || {}
     var diff = mining.difficulty
 
     var poolHr = 0
-    var soloHr = 0
     if (poolData && poolData.stats) {
-      poolHr = Number(poolData.stats.hashrate1hr || poolData.stats.hashrate5m || poolData.stats.hashrate1m || 0)
+      poolHr = Number(
+        poolData.stats.hashrate1hr ||
+          poolData.stats.hashrate5m ||
+          poolData.stats.hashrate1m ||
+          0,
+      )
     }
-    if (soloData && soloData.stats) {
-      soloHr = Number(soloData.stats.hashrate1hr || soloData.stats.hashrate5m || soloData.stats.hashrate1m || 0)
-    }
-    var totalHr = poolHr + soloHr
 
-    if (diff && totalHr > 0) {
-      var etaSec = (diff * 4294967296) / totalHr
+    if (diff && poolHr > 0) {
+      var etaSec = (diff * 4294967296) / poolHr
       el('eta-block').textContent = formatEta(etaSec)
     } else {
-      el('eta-block').textContent = totalHr > 0 ? '—' : 'No miners connected'
+      el('eta-block').textContent = poolHr > 0 ? '—' : 'No miners connected'
     }
   }
 
-  // Build a combined worker list from pool + solo data
-  function updateWorkers(poolData, soloData) {
+  function updateWorkers(poolData) {
     var allWorkers = []
-    var poolConnected = getConnectedCount(poolData)
-    var soloConnected = getConnectedCount(soloData)
-    var totalConnected = poolConnected + soloConnected
+    var totalConnected = getConnectedCount(poolData)
 
     var pw = (poolData && poolData.workers) || {}
     var poolList = pw.workers || []
     for (var i = 0; i < poolList.length; i++) {
-      poolList[i]._mode = 'pool'
       allWorkers.push(poolList[i])
-    }
-
-    var sw = (soloData && soloData.workers) || {}
-    var soloList = sw.workers || []
-    for (var j = 0; j < soloList.length; j++) {
-      soloList[j]._mode = 'solo'
-      allWorkers.push(soloList[j])
     }
 
     var tbody = el('workers-tbody')
     var empty = el('workers-empty')
     var wrap = el('workers-table-wrap')
     var badge = el('worker-count-badge')
-    var defaultEmptyText = 'No miners connected yet. Point your ASIC at the stratum URL above to get started.'
+    var defaultEmptyText =
+      'No miners connected yet. Point your ASIC at the stratum URL above to get started.'
 
     // Show all workers including dead ones so the delete button is accessible.
     var activeWorkers = allWorkers
@@ -377,9 +388,10 @@
     badge.textContent = totalConnected + ' connected'
 
     if (activeWorkers.length === 0) {
-      empty.textContent = totalConnected > 0
-        ? 'Connected workers detected. Waiting for per-worker stats...'
-        : defaultEmptyText
+      empty.textContent =
+        totalConnected > 0
+          ? 'Connected workers detected. Waiting for per-worker stats...'
+          : defaultEmptyText
       empty.style.display = ''
       wrap.style.display = 'none'
       updateMyDevices([])
@@ -398,8 +410,12 @@
       var sa = statusOrder[saKey] != null ? statusOrder[saKey] : 2
       var sb = statusOrder[sbKey] != null ? statusOrder[sbKey] : 2
       if (sa !== sb) return sa - sb
-      var hrA = dspsToHashrate(a.dsps5) || Number(a.hashrate5m || a.hashrate1m || a.hashrate || 0)
-      var hrB = dspsToHashrate(b.dsps5) || Number(b.hashrate5m || b.hashrate1m || b.hashrate || 0)
+      var hrA =
+        dspsToHashrate(a.dsps5) ||
+        Number(a.hashrate5m || a.hashrate1m || a.hashrate || 0)
+      var hrB =
+        dspsToHashrate(b.dsps5) ||
+        Number(b.hashrate5m || b.hashrate1m || b.hashrate || 0)
       return hrB - hrA
     })
 
@@ -411,7 +427,8 @@
       if (di <= 0 || di === wn.length - 1) {
         var addr = di > 0 ? wn.substring(0, di) : wn
         autoCount[addr] = (autoCount[addr] || 0) + 1
-        activeWorkers[a]._autoName = 'worker' + String(autoCount[addr]).padStart(2, '0')
+        activeWorkers[a]._autoName =
+          'worker' + String(autoCount[addr]).padStart(2, '0')
       }
     }
 
@@ -427,20 +444,27 @@
         shortName = w._autoName || 'worker'
       }
 
-      var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
-      var hr60 = formatHashrate(dspsToHashrate(w.dsps60) || Number(w.hashrate60m || w.hashrate || 0))
+      var hr5m = formatHashrate(
+        dspsToHashrate(w.dsps5) ||
+          Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0),
+      )
+      var hr60 = formatHashrate(
+        dspsToHashrate(w.dsps60) || Number(w.hashrate60m || w.hashrate || 0),
+      )
       var accepted = workerCounter(w, 'accepted')
       var acceptedCount = Number(w.accepted_count || 0)
       var rejectedCount = Number(w.rejected || 0)
       var bestDiff = formatDifficulty(w.bestdiff)
       var lastShare = timeAgo(w.lastshare)
       var status = workerStatus(w)
-      var statusLabel = status === 'alive' ? 'Alive' : status === 'idle' ? 'Idle' : 'Dead'
-      var modeClass = w._mode
+      var statusLabel =
+        status === 'alive' ? 'Alive' : status === 'idle' ? 'Idle' : 'Dead'
 
       html += '<tr>'
-      html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span>'
-      html += '<span class="worker-mode ' + modeClass + '">' + w._mode + '</span></td>'
+      html +=
+        '<td><span class="worker-name">' +
+        escapeHtml(shortName) +
+        '</span></td>'
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + hr60 + '</td>'
       html += '<td>' + formatNumber(acceptedCount) + '</td>'
@@ -451,7 +475,10 @@
       html += '<td><span class="status-dot ' + status + '"></span>'
       html += statusLabel + '</td>'
       var addrForDelete = (w.worker || w.user || '').split('.')[0]
-      html += '<td><button class="delete-btn" data-address="' + escapeHtml(addrForDelete) + '" data-mode="' + escapeHtml(w._mode) + '" title="Remove worker from stats">Delete</button></td>'
+      html +=
+        '<td><button class="delete-btn" data-address="' +
+        escapeHtml(addrForDelete) +
+        '" title="Remove worker from stats">Delete</button></td>'
       html += '</tr>'
     }
 
@@ -479,7 +506,8 @@
         loggedInAddress = addr
         btn.textContent = 'Logout'
         btn.classList.add('active')
-        hint.textContent = 'Showing devices for: ' + addr.substring(0, 16) + '...'
+        hint.textContent =
+          'Showing devices for: ' + addr.substring(0, 16) + '...'
         el('my-devices-card').style.display = ''
         el('uptime-card').style.display = ''
       } else {
@@ -492,7 +520,8 @@
       input.value = ''
       btn.textContent = 'My Devices'
       btn.classList.remove('active')
-      hint.textContent = 'Enter your BCH payout address to view only your miners.'
+      hint.textContent =
+        'Enter your BCH payout address to view only your miners.'
       el('my-devices-card').style.display = 'none'
       el('uptime-card').style.display = 'none'
     }
@@ -548,7 +577,10 @@
         shortName = w._autoName || 'worker'
       }
 
-      var hr5m = formatHashrate(dspsToHashrate(w.dsps5) || Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0))
+      var hr5m = formatHashrate(
+        dspsToHashrate(w.dsps5) ||
+          Number(w.hashrate5m || w.hashrate1m || w.hashrate || 0),
+      )
       var accepted = workerCounter(w, 'accepted')
       var acceptedCount = Number(w.accepted_count || 0)
       var rejectedCount = Number(w.rejected || 0)
@@ -557,8 +589,16 @@
       var statusLabel = status === 'alive' ? 'Yes' : 'No'
 
       html += '<tr>'
-      html += '<td><span class="worker-name">' + escapeHtml(shortName) + '</span></td>'
-      html += '<td><span class="status-dot ' + status + '"></span>' + statusLabel + '</td>'
+      html +=
+        '<td><span class="worker-name">' +
+        escapeHtml(shortName) +
+        '</span></td>'
+      html +=
+        '<td><span class="status-dot ' +
+        status +
+        '"></span>' +
+        statusLabel +
+        '</td>'
       html += '<td>' + hr5m + '</td>'
       html += '<td>' + formatNumber(acceptedCount) + '</td>'
       html += '<td>' + formatNumber(rejectedCount) + '</td>'
@@ -573,7 +613,8 @@
     var uptimeEl = el('user-uptime')
     if (myWorkers.length > 0 && myWorkers[0].lastshare > 0) {
       var diff = Math.floor(Date.now() / 1000) - myWorkers[0].lastshare
-      uptimeEl.textContent = diff < 300 ? 'Online' : timeAgo(myWorkers[0].lastshare)
+      uptimeEl.textContent =
+        diff < 300 ? 'Online' : timeAgo(myWorkers[0].lastshare)
     } else {
       uptimeEl.textContent = '—'
     }
@@ -595,14 +636,12 @@
 
     Promise.all([
       fetchStats('/api/pool-stats.json'),
-      fetchStats('/api/solo-stats.json'),
       fetchStats('/api/node-stats.json'),
     ]).then(function (results) {
       var poolData = results[0]
-      var soloData = results[1]
-      var nodeData = results[2]
+      var nodeData = results[1]
 
-      var anyOnline = poolData || soloData || nodeData
+      var anyOnline = poolData || nodeData
       if (anyOnline) {
         badge.textContent = 'Online'
         badge.classList.add('online')
@@ -612,57 +651,41 @@
       }
 
       updateCard('pool', poolData)
-      updateCard('solo', soloData)
       updateBlockchain(nodeData)
-      updateEta(poolData, soloData, nodeData)
-      updateWorkers(poolData, soloData)
+      updateEta(poolData, nodeData)
+      updateWorkers(poolData)
     })
   }
 
-  // ── Stratum URLs — dynamic, Tor-aware ────────────────────────────
-  // The pool exposes stratum on both LAN and Tor (via StartOS MultiHost).
-  // The dashboard is served from the same host, so window.location.hostname
-  // tells us which interface the user is on. If .onion → show Tor badge.
+  // ── Stratum URL ──────────────────────────────────────────────────
+  // The dashboard is served from the same host the miner will dial, so
+  // window.location.hostname is the right hostname to suggest. The port is the
+  // pool's internal one, which is only the reachable one when StartOS granted
+  // the preferred external port — the Connection Info action is authoritative.
   function setupStratumUrls() {
-    // Default ports match interfaces.ts; refined at runtime from
-    // /api/config.json (stats-api.sh derives them from the live pool config),
-    // so the dashboard no longer hard-codes ports in two places.
     var DEFAULT_POOL_PORT = 3334
-    var DEFAULT_SOLO_PORT = 4568
 
     var host = window.location.hostname || 'localhost'
-    var isTor = host.endsWith('.onion')
 
-    function applyPorts(poolPort, soloPort) {
+    function applyPorts(poolPort) {
       var pp = poolPort || DEFAULT_POOL_PORT
-      var sp = soloPort || DEFAULT_SOLO_PORT
-      var poolUrl    = el('pool-stratum-url')
-      var soloUrl    = el('solo-stratum-url')
-      var guidePool  = el('guide-pool-url')
-      var guideSolo  = el('guide-solo-url')
+      var poolUrl = el('pool-stratum-url')
+      var guidePool = el('guide-pool-url')
       var poolPortEl = el('pool-port')
-      var soloPortEl = el('solo-port')
-      if (poolUrl)    poolUrl.textContent = 'stratum+tcp://' + host + ':' + pp
-      if (soloUrl)    soloUrl.textContent = 'stratum+tcp://' + host + ':' + sp
-      if (guidePool)  guidePool.textContent = 'stratum+tcp://' + host + ':' + pp
-      if (guideSolo)  guideSolo.textContent = 'stratum+tcp://' + host + ':' + sp
+      if (poolUrl) poolUrl.textContent = 'stratum+tcp://' + host + ':' + pp
+      if (guidePool) guidePool.textContent = 'stratum+tcp://' + host + ':' + pp
       if (poolPortEl) poolPortEl.textContent = pp
-      if (soloPortEl) soloPortEl.textContent = sp
     }
 
-    if (isTor) {
+    if (host.endsWith('.onion')) {
       var poolBadge = el('pool-tor-badge')
-      var soloBadge = el('solo-tor-badge')
       if (poolBadge) poolBadge.style.display = ''
-      if (soloBadge) soloBadge.style.display = ''
     }
 
-    // Show defaults immediately, then refine from the served config.
-    applyPorts(DEFAULT_POOL_PORT, DEFAULT_SOLO_PORT)
+    // Show the default immediately, then refine from the served config.
+    applyPorts(DEFAULT_POOL_PORT)
     fetchStats('/api/config.json').then(function (cfg) {
-      if (cfg && (cfg.poolPort || cfg.soloPort)) {
-        applyPorts(Number(cfg.poolPort), Number(cfg.soloPort))
-      }
+      if (cfg && cfg.poolPort) applyPorts(Number(cfg.poolPort))
     })
   }
 
@@ -670,7 +693,10 @@
   var svg = document.querySelector('.sync-ring svg')
   if (svg) {
     var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs')
-    var grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient')
+    var grad = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'linearGradient',
+    )
     grad.id = 'ring-gradient'
     var s1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop')
     s1.setAttribute('offset', '0%')
@@ -691,12 +717,15 @@
       var btn = e.target
       if (!btn || btn.className.indexOf('delete-btn') < 0) return
       var address = btn.getAttribute('data-address')
-      var mode    = btn.getAttribute('data-mode')
-      if (!address || !mode) return
+      if (!address) return
       btn.disabled = true
       btn.textContent = '...'
-      fetch('/api/delete-worker?address=' + encodeURIComponent(address) + '&mode=' + encodeURIComponent(mode), { method: 'POST' })
-        .then(function (res) { return res.json() })
+      fetch('/api/delete-worker?address=' + encodeURIComponent(address), {
+        method: 'POST',
+      })
+        .then(function (res) {
+          return res.json()
+        })
         .then(function (data) {
           if (data.ok) {
             var row = btn.parentNode && btn.parentNode.parentNode

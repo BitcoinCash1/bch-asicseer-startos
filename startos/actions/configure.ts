@@ -1,177 +1,87 @@
+import { storeJson } from '../fileModels/store.json'
+import { i18n } from '../i18n'
 import { sdk } from '../sdk'
-import { storeJson } from '../file-models/store.json'
 
-const configSpec = sdk.InputSpec.of({
-  payoutAddress: sdk.Value.text({
-    name: 'Payout Address',
-    description:
-      'Your BCH address for receiving mining rewards. Used as the coinbase output address. ' +
-      'Must match the selected node\'s network — mainnet uses bitcoincash:, testnets/chipnet use bchtest:, regtest uses bchreg:. A wrong-network address is rejected at startup.',
-    required: true,
-    default: null,
-    placeholder: 'bitcoincash:qr...',
-    masked: false,
-    minLength: 20,
-    maxLength: 120,
-    patterns: [
-      {
-        regex:
-          '^((bitcoincash|bchtest|bchreg):)?[qpQP][a-zA-Z0-9]{41}$|^[123mn][a-km-zA-HJ-NP-Z1-9]{25,34}$',
-        description:
-          'Enter a valid BCH address — cashaddr (e.g. bitcoincash:q… / bchtest:q…) or legacy. The network is checked against the node when the service starts.',
-      },
-    ],
-  }),
-  poolFee: sdk.Value.number({
-    name: 'Pool Fee (%)',
-    description:
-      'Percentage fee taken from pool mining rewards. Solo mining always has 0% fee.',
-    required: true,
-    default: 1,
-    min: 0,
-    max: 10,
-    integer: false,
-    units: '%',
-  }),
-  poolIdentifier: sdk.Value.text({
-    name: 'Pool Identifier',
-    description:
-      'Text embedded in the coinbase transaction (pool signature). Appears on block explorers.',
-    required: true,
-    default: 'ASICSeer',
-    placeholder: 'ASICSeer',
-    masked: false,
-    minLength: 1,
-    maxLength: 30,
-  }),
-  poolDifficulty: sdk.Value.number({
-    name: 'Starting Difficulty',
-    description:
-      'Initial share difficulty assigned to new miners on connect. Vardiff adjusts automatically from here. Upstream default is 42.',
-    required: true,
-    default: 42,
-    min: 1,
-    max: 1000000,
-    integer: true,
-    units: null,
-  }),
-  nodeAddressMode: sdk.Value.select({
-    name: 'Node Address Source',
-    description:
-      'Auto uses <selected-node>.startos. Custom lets you point to a manual host:port (including onion endpoints).',
-    default: 'auto',
-    values: {
-      auto: 'Automatic (selected StartOS dependency)',
-      custom: 'Custom host and port',
-    },
-  }),
-  customNodeHost: sdk.Value.text({
-    name: 'Custom Node Host',
-    description:
-      'Used only when Node Address Source is Custom. Example: bitcoincashd.startos or abcdef.onion',
-    required: false,
-    default: '',
-    placeholder: 'bitcoincashd.startos',
-    masked: false,
-    minLength: 0,
-    maxLength: 255,
-  }),
-  customNodePort: sdk.Value.number({
-    name: 'Custom Node RPC Port',
-    description: 'Used only when Node Address Source is Custom.',
-    required: true,
-    default: 8332,
-    min: 1,
-    max: 65535,
-    integer: true,
-    units: null,
-  }),
-  torMode: sdk.Value.select({
-    name: 'RPC Network Mode',
-    description:
-      'Choose how ASICSeer reaches the node RPC endpoint. Tor modes use SOCKS5 via the Tor package proxy.',
-    default: 'off',
-    values: {
-      off: 'Direct clearnet/internal routing',
-      prefer: 'Prefer Tor proxy',
-      only: 'Tor-only (fail if Tor proxy unavailable)',
-    },
-  }),
-  torProxyHost: sdk.Value.text({
-    name: 'Tor Proxy Host',
-    description: 'SOCKS5 host used when RPC Network Mode is not Off.',
-    required: false,
-    default: 'tor.startos',
-    placeholder: 'tor.startos',
-    masked: false,
-    minLength: 0,
-    maxLength: 255,
-  }),
-  torProxyPort: sdk.Value.number({
-    name: 'Tor Proxy Port',
-    description: 'SOCKS5 port used when RPC Network Mode is not Off.',
-    required: true,
-    default: 9050,
-    min: 1,
-    max: 65535,
-    integer: true,
-    units: null,
-  }),
-  disableDevDonation: sdk.Value.toggle({
-    name: 'Disable Developer Donation',
-    description:
-      'ASICSeer upstream includes an optional developer donation: 10% of the pool fee is split between the ASICSeer developer (Calin Culianu) and the BCHN project. ' +
-      'This toggle is provided natively by the developer himself via the disable_dev_donation config key. ' +
-      'When off (default), the donation is active. When on, the full pool fee goes to your payout address.',
-    default: false,
-  }),
-  rpcAuthMode: sdk.Value.select({
-    name: 'RPC Credentials Source',
-    description:
-      'Automatic uses credentials from the selected node package. Manual uses the values below.',
-    default: 'auto',
-    values: {
-      auto: 'Automatic (from dependency store.json)',
-      manual: 'Manual username/password',
-    },
-  }),
-  manualRpcUser: sdk.Value.text({
-    name: 'Manual RPC Username',
-    description: 'Used only when RPC Credentials Source is Manual.',
-    required: false,
-    default: '',
-    placeholder: 'bitcoincashd',
-    masked: false,
-    minLength: 0,
-    maxLength: 120,
-  }),
-  manualRpcPassword: sdk.Value.text({
-    name: 'Manual RPC Password',
-    description: 'Used only when RPC Credentials Source is Manual.',
-    required: false,
-    default: '',
-    placeholder: 'rpc password',
-    masked: true,
-    minLength: 0,
-    maxLength: 256,
-  }),
-})
+const { InputSpec, Value } = sdk
 
 export const configure = sdk.Action.withInput(
   'configure',
 
-  async ({ effects }) => ({
-    name: 'Configure',
-    description: 'Configure ASICSeer mining pool settings',
+  async () => ({
+    name: i18n('Configure'),
+    description: i18n('Set the payout address and how the pool pays out.'),
     warning: null,
     allowedStatuses: 'any',
     group: null,
     visibility: 'enabled',
   }),
 
-  configSpec,
+  InputSpec.of({
+    payoutAddress: Value.text({
+      name: i18n('Payout Address'),
+      description: i18n(
+        'The address a found block pays to. It must belong to the chain the node is on — mainnet addresses start bitcoincash:, the test chains bchtest:, regtest bchreg:.',
+      ),
+      required: true,
+      default: null,
+      placeholder: 'bitcoincash:qr...',
+      masked: false,
+      patterns: [
+        {
+          regex:
+            '^((bitcoincash|bchtest|bchreg):)?[qpQP][a-zA-Z0-9]{41}$|^[123mn][a-km-zA-HJ-NP-Z1-9]{25,34}$',
+          description: i18n(
+            'A Bitcoin Cash address, either CashAddr (bitcoincash:q…) or legacy.',
+          ),
+        },
+      ],
+    }),
+    poolFee: Value.number({
+      name: i18n('Pool Fee'),
+      description: i18n(
+        'The share of each block reward the pool keeps. The rest is split between the miners that worked on it.',
+      ),
+      required: true,
+      default: 1,
+      min: 0,
+      max: 10,
+      integer: false,
+      units: '%',
+    }),
+    poolIdentifier: Value.text({
+      name: i18n('Pool Identifier'),
+      description: i18n(
+        'Written into the coinbase transaction of every block this pool finds, where block explorers show it.',
+      ),
+      required: true,
+      default: 'ASICSeer',
+      placeholder: 'ASICSeer',
+      masked: false,
+      minLength: 1,
+      maxLength: 30,
+    }),
+    poolDifficulty: Value.number({
+      name: i18n('Starting Difficulty'),
+      description: i18n(
+        'The share difficulty a miner is given when it first connects. The pool raises or lowers it from there to match what the miner can actually do.',
+      ),
+      required: true,
+      default: 42,
+      min: 1,
+      max: 1000000,
+      integer: true,
+      units: null,
+    }),
+    disableDevDonation: Value.toggle({
+      name: i18n('Disable Developer Donation'),
+      description: i18n(
+        'ASICSeer donates a tenth of the pool fee — not of the block reward — to its author and to Bitcoin Cash Node. Turn this on to keep the whole fee.',
+      ),
+      default: false,
+    }),
+  }),
 
-  async ({ effects }) => {
+  async () => {
     const store = await storeJson.read().once()
     return {
       payoutAddress: store?.payoutAddress ?? '',
@@ -179,39 +89,10 @@ export const configure = sdk.Action.withInput(
       poolIdentifier: store?.poolIdentifier ?? 'ASICSeer',
       poolDifficulty: store?.poolDifficulty ?? 42,
       disableDevDonation: store?.disableDevDonation ?? false,
-      nodeAddressMode: store?.nodeAddressMode ?? 'auto',
-      customNodeHost: store?.customNodeHost ?? '',
-      customNodePort: store?.customNodePort ?? 8332,
-      torMode: store?.torMode ?? 'off',
-      torProxyHost: store?.torProxyHost ?? 'tor.startos',
-      torProxyPort: store?.torProxyPort ?? 9050,
-      rpcAuthMode: store?.rpcAuthMode ?? 'auto',
-      manualRpcUser: store?.manualRpcUser ?? '',
-      manualRpcPassword: store?.manualRpcPassword ?? '',
     }
   },
 
-  async ({ effects, input }) => {
-    await storeJson.merge(effects, {
-      payoutAddress: input.payoutAddress,
-      poolFee: input.poolFee,
-      poolIdentifier: input.poolIdentifier,
-      poolDifficulty: input.poolDifficulty,
-      disableDevDonation: input.disableDevDonation,
-      nodeAddressMode: input.nodeAddressMode,
-      customNodeHost: input.customNodeHost ?? '',
-      customNodePort: input.customNodePort,
-      torMode: input.torMode,
-      torProxyHost: input.torProxyHost ?? 'tor.startos',
-      torProxyPort: input.torProxyPort,
-      rpcAuthMode: input.rpcAuthMode,
-      manualRpcUser: input.manualRpcUser ?? '',
-      manualRpcPassword: input.manualRpcPassword ?? '',
-    })
-    // Pool settings live in store.json, which main.ts reads with .once() (not
-    // reactive). Restart so the new payout address / fee / node target are
-    // written into the asicseer config and picked up by the running daemons.
-    await effects.restart()
-    return null
-  },
+  // `main` reads these through a `.const()`, so writing them here is what
+  // restarts the pool onto the new settings.
+  async ({ effects, input }) => storeJson.merge(effects, input),
 )

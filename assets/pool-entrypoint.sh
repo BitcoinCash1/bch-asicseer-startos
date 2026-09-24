@@ -1,13 +1,12 @@
 #!/bin/sh
-# Entrypoint for pool/solo subcontainers.
-# Starts ckpool which automatically writes stats to:
-#   /data/{mode}/log/pool/pool.status  (pool-wide stats, multi-line JSON)
-#   /data/{mode}/log/users/{address}   (per-user/worker stats)
-# The UI container reads these files directly from the shared /data volume.
-# No ckpmsg stats-writer loop needed — the daemon handles everything.
+# Entrypoint for the mining subcontainer.
+#
+# asicseer-pool writes its own stats to {logdir}:
+#   /data/pool/log/pool/pool.status   pool-wide stats, multi-line JSON
+#   /data/pool/log/users/{address}    per-user/worker stats
+# The UI container reads these files off the shared /data volume.
 
-MODE="${1:-pool}"                     # "pool" or "solo"
-CONF="${2}"                           # e.g. /data/pool/ckpool.conf
+CONF="${1}"
 
 log() {
   printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
@@ -17,33 +16,22 @@ RPC_TARGET=$(jq -r '.btcd[0].url // empty' "$CONF" 2>/dev/null)
 RPC_USER=$(jq -r '.btcd[0].auth // empty' "$CONF" 2>/dev/null)
 RPC_PASS=$(jq -r '.btcd[0].pass // empty' "$CONF" 2>/dev/null)
 
-# Clear sharelog state so worker difficulty always resets from startdiff on restart.
-# Prevents stale high-difficulty entries from causing miners to appear Idle after restart.
-rm -rf /data/${MODE}/log/???????? /data/${MODE}/log/clients.json 2>/dev/null
+# Clear sharelog state so worker difficulty always resets from startdiff on
+# restart. Stale high-difficulty entries otherwise leave miners looking idle.
+rm -rf /data/pool/log/???????? /data/pool/log/clients.json 2>/dev/null
 
-# Clean stale socket directory from previous runs
-rm -rf "/tmp/${MODE}" 2>/dev/null
+# Clean the socket directory left by a previous run
+rm -rf /tmp/pool 2>/dev/null
 
-# -n sets the process name (controls socket directory under /tmp/{name}/)
-# -B enables solo mode (only for solo daemon)
-if [ "$MODE" = "solo" ]; then
-  CMD="asicseer -c $CONF -n $MODE -B -L"
-else
-  CMD="asicseer -c $CONF -n $MODE -L"
-fi
+log "starting asicseer conf=${CONF} rpc_target=${RPC_TARGET:-unknown} rpc_user=${RPC_USER:-unknown}"
 
-log "starting asicseer mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknown} rpc_user=${RPC_USER:-unknown}"
-
-# ckpool only creates the sharelog directory /data/{mode}/log/{blockheight:08x}/
-# when it detects a NEW block. Between restarts (or before the next block is
-# found on mainnet, ~10 min interval) there is no directory, so fopen() fails
-# and every share submitted in that window is silently dropped from the
-# sharelog — which is the ONLY place per-worker accepted/rejected counts are
-# persisted. Fix it by pre-creating the directory for the current tip (and the
-# next few heights) on a background loop, using the same RPC credentials the
-# pool uses.
+# asicseer-pool only creates the sharelog directory /data/pool/log/{height:08x}
+# when it detects a NEW block. Between restarts — or before the next block, ~10
+# minutes on mainnet — there is no directory, fopen() fails, and every share
+# submitted in that window is dropped from the sharelog, which is the only place
+# per-worker accepted/rejected counts are persisted. Pre-create the directory
+# for the current tip and the next couple of heights.
 (
-  LOGROOT="/data/${MODE}/log"
   while : ; do
     if [ -n "$RPC_TARGET" ] && [ -n "$RPC_USER" ] && [ -n "$RPC_PASS" ]; then
       BC=$(curl -s --max-time 5 --user "${RPC_USER}:${RPC_PASS}" \
@@ -51,13 +39,12 @@ log "starting asicseer mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknow
              -H 'content-type: text/plain;' "http://${RPC_TARGET}/" 2>/dev/null \
            | jq -r '.result // empty' 2>/dev/null)
       if [ -n "$BC" ] && [ "$BC" -gt 0 ] 2>/dev/null; then
-        # Pre-create current and next 2 heights — covers the race where the
-        # pool learns the new-block notification slightly before or after us.
+        # Current and next 2 heights — covers the race where the pool learns of
+        # a new block slightly before or after this loop does.
         for d in 0 1 2; do
-          H=$((BC + d))
-          HEX=$(printf '%08x' "$H")
-          mkdir -p "${LOGROOT}/${HEX}" 2>/dev/null
-          chmod 0755 "${LOGROOT}/${HEX}" 2>/dev/null
+          HEX=$(printf '%08x' "$((BC + d))")
+          mkdir -p "/data/pool/log/${HEX}" 2>/dev/null
+          chmod 0755 "/data/pool/log/${HEX}" 2>/dev/null
         done
       fi
     fi
@@ -65,51 +52,47 @@ log "starting asicseer mode=${MODE} conf=${CONF} rpc_target=${RPC_TARGET:-unknow
   done
 ) &
 
-# Background loop: every 10s, query ckpool's live client table via ckpmsg
-# and write it to the shared /data volume so the UI subcontainer can derive
-# a real per-worker submission count (accepted_count = shares / current_diff).
-# ckpool stores only a diff-weighted sum per-worker on disk; the per-client
-# current vardiff (`client->diff`) is only reachable over ckpool's Unix
-# socket, so we stage it here.
+# asicseer-pool keeps a diff-weighted share sum per worker on disk, but each
+# client's current vardiff is only reachable over its Unix socket. Stage the
+# live client table on the shared volume so the dashboard can derive a real
+# per-worker submission count from it.
 (
   while : ; do
     sleep 10
-    [ -S "/tmp/${MODE}/listener" ] || continue
-    OUT=$(printf 'clients\n' | ckpmsg -s /tmp -n "${MODE}" 2>/dev/null \
+    [ -S /tmp/pool/listener ] || continue
+    OUT=$(printf 'clients\n' | ckpmsg -s /tmp -n pool 2>/dev/null \
             | sed -n 's/.*Received response: //p' | head -1)
     if [ -n "$OUT" ]; then
-      mkdir -p "/data/${MODE}/log" 2>/dev/null
-      printf '%s' "$OUT" > "/data/${MODE}/log/.clients.tmp" \
-        && mv "/data/${MODE}/log/.clients.tmp" "/data/${MODE}/log/clients.json"
+      mkdir -p /data/pool/log 2>/dev/null
+      printf '%s' "$OUT" > /data/pool/log/.clients.tmp \
+        && mv /data/pool/log/.clients.tmp /data/pool/log/clients.json
     fi
   done
 ) &
 
-# Restart loop — if ckpool crashes (e.g. RPC not ready), retry after delay
+# Restart loop — the pool exits when the node RPC is not yet answering.
 MAX_RETRIES=10
 RETRY=0
 while true; do
-  log "launch attempt $((RETRY + 1))/${MAX_RETRIES} mode=${MODE}"
-  $CMD &
+  log "launch attempt $((RETRY + 1))/${MAX_RETRIES}"
+  asicseer -c "$CONF" -n pool -L &
   PID=$!
 
-  # Forward SIGTERM/SIGINT to the daemon for clean shutdown
+  # Forward SIGTERM/SIGINT to the daemon for a clean shutdown
   trap 'kill "$PID" 2>/dev/null; exit 0' TERM INT
   wait "$PID"
   EXIT_CODE=$?
 
-  # Exit 0 means clean shutdown (SIGTERM) — don't restart
+  # Exit 0 means a clean shutdown (SIGTERM) — don't restart
   [ "$EXIT_CODE" -eq 0 ] && exit 0
 
   RETRY=$((RETRY + 1))
   if [ "$RETRY" -ge "$MAX_RETRIES" ]; then
-    echo "asicseer ($MODE) failed $MAX_RETRIES times, giving up"
+    log "asicseer failed ${MAX_RETRIES} times, giving up"
     exit 1
   fi
 
-  log "asicseer (${MODE}) exited with code ${EXIT_CODE}, restarting in 5s (attempt ${RETRY}/${MAX_RETRIES})"
-  # Clean stale sockets before retry
-  rm -rf "/tmp/${MODE}" 2>/dev/null
-  log "cleaned stale socket dir /tmp/${MODE}"
+  log "asicseer exited with code ${EXIT_CODE}, restarting in 5s (attempt ${RETRY}/${MAX_RETRIES})"
+  rm -rf /tmp/pool 2>/dev/null
   sleep 5
 done

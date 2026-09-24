@@ -1,16 +1,19 @@
 {
   "name": "bch-asicseer-startos",
   "scripts": {
-    "build": "rm -rf ./javascript && node scripts/ncc-allow-ts.cjs",
+    "build": "rm -rf ./javascript && ncc build startos/index.ts -o ./javascript",
     "prettier": "prettier --write startos",
     "check": "tsc --noEmit"
   },
   "dependencies": {
     "@start9labs/start-sdk": "2.0.9",
-    "bitcoin-cash-node-startos": "file:.deps/bitcoin-cash-node-startos",
-    "bitcoin-cash-daemon-startos": "file:.deps/bitcoin-cash-daemon-startos",
-    "flowee-startos": "file:.deps/flowee-startos",
-    "knuth-bch-startos": "file:.deps/knuth-bch-startos"
+    "bitcoin-cash-daemon-startos": "github:Start9-Community/bitcoin-cash-daemon-startos#next",
+    "bitcoin-cash-node-startos": "github:Start9-Community/bitcoin-cash-node-startos#next",
+    "flowee-startos": "github:Start9-Community/flowee-the-hub-startos#next",
+    "knuth-bch-startos": "github:Start9-Community/knuth-bch-startos#master"
+  },
+  "overrides": {
+    "@start9labs/start-sdk": "$@start9labs/start-sdk"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
@@ -23,8 +26,5 @@
     "tabWidth": 2,
     "semi": false,
     "singleQuote": true
-  },
-  "overrides": {
-    "@start9labs/start-sdk": "$@start9labs/start-sdk"
   }
 }

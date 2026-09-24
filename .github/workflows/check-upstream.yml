@@ -2,12 +2,12 @@ name: Check Upstream
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
-  actions: write
+  pull-requests: write
 
 jobs:
   check:
@@ -18,37 +18,26 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check for a new upstream asicseer-pool release
+      - name: Check for a new upstream ASICSeer release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          LATEST=$(gh release view --repo cculianu/asicseer-pool --json tagName -q '.tagName' 2>/dev/null || echo "")
+          LATEST=$(git ls-remote --tags --refs https://github.com/cculianu/asicseer-pool.git 'v*' |
+            sed 's#.*refs/tags/##' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
           if [ -z "$LATEST" ]; then echo "Could not fetch upstream version"; exit 0; fi
 
-          CURRENT=$(python3 - <<'PY'
-          import re
-          from pathlib import Path
-          idx = Path("startos/versions/index.ts").read_text()
-          var = re.search(r"current:\s*(\w+)", idx).group(1)
-          imp = re.search(rf"import \{{\s*{re.escape(var)}\s*\}} from '([^']+)'", idx)
-          ver = re.search(
-              r"version:\s*'([^']+)'",
-              Path("startos/versions/" + imp.group(1).lstrip("./") + ".ts").read_text(),
-          ).group(1)
-          print("v" + ver.split(":", 1)[0])
-          PY
-          )
-
-          if [ "${LATEST#v}" = "${CURRENT#v}" ]; then
+          CURRENT=$(sed -nE 's/^ARG ASICSEER_REF=(.*)$/\1/p' Dockerfile)
+          if [ "$LATEST" = "$CURRENT" ]; then
             echo "Already at $LATEST — no update"
             exit 0
           fi
 
-          echo "Updating $CURRENT -> $LATEST"
-          if bash scripts/auto-bump.sh "$LATEST"; then
-            gh workflow run tagAndRelease.yml
-          else
-            echo "auto-bump skipped or failed — not dispatching release"
+          if git ls-remote --exit-code --heads origin "auto-bump/$LATEST" >/dev/null; then
+            echo "A bump PR for $LATEST is already open — nothing to do"
+            exit 0
           fi
+
+          echo "Updating $CURRENT -> $LATEST"
+          bash scripts/auto-bump.sh "$LATEST"
         shell: bash
