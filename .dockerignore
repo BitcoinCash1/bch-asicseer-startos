@@ -1,7 +1,2 @@
 .git
 .gitmodules
-node_modules
-javascript
-ncc-cache
-docker-images
-*.s9pk
